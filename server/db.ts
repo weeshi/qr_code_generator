@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, qrCodes, InsertQRCode } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,69 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createQRCode(qrCode: InsertQRCode) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  
+  const result = await db.insert(qrCodes).values(qrCode);
+  return result;
+}
+
+export async function getUserQRCodes(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get QR codes: database not available");
+    return [];
+  }
+
+  const result = await db
+    .select()
+    .from(qrCodes)
+    .where(eq(qrCodes.userId, userId))
+    .orderBy((t) => [desc(t.createdAt)]);
+
+  return result;
+}
+
+export async function getQRCodeById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get QR code: database not available");
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(qrCodes)
+    .where(and(eq(qrCodes.id, id), eq(qrCodes.userId, userId)))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function deleteQRCode(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .delete(qrCodes)
+    .where(and(eq(qrCodes.id, id), eq(qrCodes.userId, userId)));
+}
+
+export async function updateQRCode(id: number, userId: number, updates: Partial<InsertQRCode>) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db
+    .update(qrCodes)
+    .set(updates)
+    .where(and(eq(qrCodes.id, id), eq(qrCodes.userId, userId)));
+
+  return result;
+}

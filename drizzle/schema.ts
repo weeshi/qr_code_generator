@@ -25,4 +25,22 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * QR Code records table
+ * Stores all generated QR codes with their metadata and content
+ */
+export const qrCodes = mysqlTable("qr_codes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 50 }).notNull(), // vcard, url, pdf, website, facebook, image, video, business, mp3, whatsapp, social, instagram, wifi, coupon, app, menu
+  name: varchar("name", { length: 255 }).notNull(), // User-friendly name for the QR code
+  content: text("content").notNull(), // JSON stringified content based on type
+  qrDataUrl: text("qrDataUrl"), // Base64 encoded QR code image
+  qrSvg: text("qrSvg"), // SVG representation of QR code
+  downloadCount: int("downloadCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type QRCode = typeof qrCodes.$inferSelect;
+export type InsertQRCode = typeof qrCodes.$inferInsert;
