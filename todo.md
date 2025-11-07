@@ -48,3 +48,17 @@
 - [ ] Test responsive design
 - [ ] Test Arabic language support
 - [ ] Deploy to production
+
+
+## New Features - File Upload & Templates
+- [x] Add file upload for PDF QR codes
+- [x] Add file upload for image gallery QR codes
+- [x] Add file upload for video QR codes
+- [x] Add file upload for MP3/audio QR codes
+- [x] Create professional HTML template for vCard (business cards)
+- [x] Create professional HTML template for social media contacts
+- [x] Create professional HTML template for business information
+- [x] Create professional HTML template for restaurant menus
+- [x] Create professional HTML template for coupons/discounts
+- [x] Integrate S3 storage for uploaded files
+- [x] Update QR code generation to include file URLs

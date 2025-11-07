@@ -11,6 +11,19 @@ import {
   updateQRCode,
 } from "./db";
 import { generateQRCodeByType } from "./qrGenerator";
+import {
+  uploadFile,
+  validateFileSize,
+  validateFileType,
+  ALLOWED_MIME_TYPES,
+} from "./fileUpload";
+import {
+  generateVCardTemplate,
+  generateSocialMediaTemplate,
+  generateBusinessTemplate,
+  generateMenuTemplate,
+  generateCouponTemplate,
+} from "./htmlTemplates";
 
 export const appRouter = router({
   system: systemRouter,
@@ -152,6 +165,161 @@ export const appRouter = router({
           success: true,
           message: "QR code deleted successfully",
         };
+      }),
+
+    // Upload file for media-based QR codes
+    uploadFile: protectedProcedure
+      .input(
+        z.object({
+          fileData: z.string(), // Base64 encoded file
+          fileName: z.string(),
+          mimeType: z.string(),
+          type: z.enum(["pdf", "image", "video", "audio"]),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        try {
+          // Validate file type
+          const allowedTypes = ALLOWED_MIME_TYPES[input.type];
+          if (!validateFileType(input.mimeType, allowedTypes)) {
+            throw new Error(`Invalid file type for ${input.type}`);
+          }
+
+          // Convert base64 to buffer
+          const fileBuffer = Buffer.from(input.fileData, "base64");
+
+          // Validate file size
+          if (!validateFileSize(fileBuffer)) {
+            throw new Error("File size exceeds 50MB limit");
+          }
+
+          // Upload file
+          const uploadedFile = await uploadFile(
+            fileBuffer,
+            input.fileName,
+            input.mimeType,
+            ctx.user.id
+          );
+
+          return {
+            success: true,
+            file: uploadedFile,
+          };
+        } catch (error) {
+          throw new Error(
+            `File upload failed: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }),
+  }),
+
+  // HTML Templates
+  templates: router({
+    // Generate vCard HTML
+    vcard: protectedProcedure
+      .input(
+        z.object({
+          firstName: z.string(),
+          lastName: z.string(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
+          organization: z.string().optional(),
+          url: z.string().optional(),
+          address: z.string().optional(),
+          photo: z.string().optional(),
+          qrCodeUrl: z.string().optional(),
+        })
+      )
+      .query(({ input }) => {
+        const html = generateVCardTemplate(input);
+        return { html };
+      }),
+
+    // Generate social media HTML
+    socialMedia: protectedProcedure
+      .input(
+        z.object({
+          name: z.string(),
+          bio: z.string().optional(),
+          instagram: z.string().optional(),
+          facebook: z.string().optional(),
+          twitter: z.string().optional(),
+          linkedin: z.string().optional(),
+          tiktok: z.string().optional(),
+          youtube: z.string().optional(),
+          qrCodeUrl: z.string().optional(),
+        })
+      )
+      .query(({ input }) => {
+        const html = generateSocialMediaTemplate(input);
+        return { html };
+      }),
+
+    // Generate business HTML
+    business: protectedProcedure
+      .input(
+        z.object({
+          companyName: z.string(),
+          description: z.string().optional(),
+          industry: z.string().optional(),
+          website: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
+          address: z.string().optional(),
+          logo: z.string().optional(),
+          qrCodeUrl: z.string().optional(),
+        })
+      )
+      .query(({ input }) => {
+        const html = generateBusinessTemplate(input);
+        return { html };
+      }),
+
+    // Generate menu HTML
+    menu: protectedProcedure
+      .input(
+        z.object({
+          restaurantName: z.string(),
+          description: z.string().optional(),
+          categories: z.array(
+            z.object({
+              name: z.string(),
+              items: z.array(
+                z.object({
+                  name: z.string(),
+                  description: z.string().optional(),
+                  price: z.string(),
+                })
+              ),
+            })
+          ),
+          phone: z.string().optional(),
+          address: z.string().optional(),
+          qrCodeUrl: z.string().optional(),
+        })
+      )
+      .query(({ input }) => {
+        const html = generateMenuTemplate(input);
+        return { html };
+      }),
+
+    // Generate coupon HTML
+    coupon: protectedProcedure
+      .input(
+        z.object({
+          title: z.string(),
+          description: z.string().optional(),
+          discount: z.string(),
+          code: z.string(),
+          validUntil: z.string().optional(),
+          terms: z.string().optional(),
+          companyName: z.string().optional(),
+          qrCodeUrl: z.string().optional(),
+        })
+      )
+      .query(({ input }) => {
+        const html = generateCouponTemplate(input);
+        return { html };
       }),
   }),
 });

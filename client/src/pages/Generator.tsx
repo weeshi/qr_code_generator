@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Download, Share2, Loader2, Copy, Check } from "lucide-react";
+import { ArrowLeft, Download, Share2, Loader2, Copy, Check, Upload, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface GeneratorProps {
@@ -17,10 +17,13 @@ interface GeneratorProps {
 export default function Generator({ type }: GeneratorProps) {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, string>>({})
   const [qrName, setQrName] = useState("");
   const [generatedQR, setGeneratedQR] = useState<{ dataUrl: string; svg: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<any>(null);
+  const [templateHtml, setTemplateHtml] = useState<string | null>(null);
+  const [showTemplate, setShowTemplate] = useState(false);
 
   const generateMutation = trpc.qrCode.generate.useMutation({
     onSuccess: (data) => {
@@ -32,6 +35,61 @@ export default function Generator({ type }: GeneratorProps) {
     },
   });
 
+  const uploadFileMutation = trpc.qrCode.uploadFile.useMutation({
+    onSuccess: (data) => {
+      setUploadedFile(data.file);
+      setFormData({ ...formData, url: data.file.url });
+      toast.success("تم رفع الملف بنجاح");
+    },
+    onError: (error) => {
+      toast.error(`خطأ في رفع الملف: ${error.message}`);
+    },
+  });
+
+  const getVCardTemplateMutation = trpc.templates.vcard.useQuery(
+    {
+      firstName: formData.firstName as string || "",
+      lastName: formData.lastName as string || "",
+      phone: formData.phone as string,
+      email: formData.email as string,
+      organization: formData.organization as string,
+      url: formData.url as string,
+      address: formData.address as string,
+      qrCodeUrl: generatedQR?.dataUrl,
+    },
+    { enabled: false }
+  );
+
+  const getSocialMediaTemplateMutation = trpc.templates.socialMedia.useQuery(
+    {
+      name: formData.name as string || "",
+      bio: formData.bio as string,
+      instagram: formData.instagram as string,
+      facebook: formData.facebook as string,
+      twitter: formData.twitter as string,
+      linkedin: formData.linkedin as string,
+      tiktok: formData.tiktok as string,
+      youtube: formData.youtube as string,
+      qrCodeUrl: generatedQR?.dataUrl,
+    },
+    { enabled: false }
+  );
+
+  const getBusinessTemplateMutation = trpc.templates.business.useQuery(
+    {
+      companyName: formData.companyName as string || "",
+      description: formData.description as string,
+      industry: formData.industry as string,
+      website: formData.website as string,
+      phone: formData.phone as string,
+      email: formData.email as string,
+      address: formData.address as string,
+      logo: formData.logo as string,
+      qrCodeUrl: generatedQR?.dataUrl,
+    },
+    { enabled: false }
+  );
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -40,17 +98,76 @@ export default function Generator({ type }: GeneratorProps) {
     );
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const base64 = event.target?.result as string;
+        const base64Data = base64.split(",")[1];
+
+        uploadFileMutation.mutate({
+          fileData: base64Data,
+          fileName: file.name,
+          mimeType: file.type,
+          type: type as "pdf" | "image" | "video" | "audio",
+        });
+      } catch (error) {
+        toast.error("خطأ في قراءة الملف");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleGenerate = async () => {
     if (!qrName.trim()) {
       toast.error("يرجى إدخال اسم لرمز QR");
       return;
     }
 
+    const contentData: Record<string, any> = {};
+    Object.entries(formData).forEach(([key, value]) => {
+      if (typeof value === "string") {
+        contentData[key] = value;
+      }
+    });
+
     generateMutation.mutate({
       type,
       name: qrName,
-      content: formData,
+      content: contentData,
     });
+  };
+
+  const handleShowTemplate = async () => {
+    if (!generatedQR) {
+      toast.error("يرجى إنشاء رمز QR أولاً");
+      return;
+    }
+
+    let mutation: any = null;
+
+    switch (type) {
+      case "vcard":
+        await getVCardTemplateMutation.refetch();
+        setTemplateHtml(getVCardTemplateMutation.data?.html || null);
+        break;
+      case "social":
+        await getSocialMediaTemplateMutation.refetch();
+        setTemplateHtml(getSocialMediaTemplateMutation.data?.html || null);
+        break;
+      case "business":
+        await getBusinessTemplateMutation.refetch();
+        setTemplateHtml(getBusinessTemplateMutation.data?.html || null);
+        break;
+      default:
+        toast.error("لا توجد قالب متاح لهذا النوع");
+        return;
+    }
+
+    setShowTemplate(true);
   };
 
   const handleDownload = () => {
@@ -82,7 +199,7 @@ export default function Generator({ type }: GeneratorProps) {
               <div>
                 <Label>الاسم الأول</Label>
                 <Input
-                  value={formData.firstName || ""}
+                  value={(formData.firstName as string) || ""}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   placeholder="أحمد"
                 />
@@ -90,7 +207,7 @@ export default function Generator({ type }: GeneratorProps) {
               <div>
                 <Label>الاسم الأخير</Label>
                 <Input
-                  value={formData.lastName || ""}
+                  value={(formData.lastName as string) || ""}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   placeholder="محمد"
                 />
@@ -100,7 +217,7 @@ export default function Generator({ type }: GeneratorProps) {
               <Label>البريد الإلكتروني</Label>
               <Input
                 type="email"
-                value={formData.email || ""}
+                  value={(formData.email as string) || ""}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="example@email.com"
               />
@@ -108,7 +225,7 @@ export default function Generator({ type }: GeneratorProps) {
             <div>
               <Label>رقم الهاتف</Label>
               <Input
-                value={formData.phone || ""}
+                  value={(formData.phone as string) || ""}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+966501234567"
               />
@@ -116,7 +233,7 @@ export default function Generator({ type }: GeneratorProps) {
             <div>
               <Label>المنظمة</Label>
               <Input
-                value={formData.organization || ""}
+                  value={(formData.organization as string) || ""}
                 onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
                 placeholder="اسم الشركة"
               />
@@ -124,9 +241,17 @@ export default function Generator({ type }: GeneratorProps) {
             <div>
               <Label>الموقع الإلكتروني</Label>
               <Input
-                value={formData.url || ""}
+                value={(formData.url as string) || ""}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                 placeholder="https://example.com"
+              />
+            </div>
+            <div>
+              <Label>العنوان</Label>
+              <Input
+                value={(formData.address as string) || ""}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="العنوان الكامل"
               />
             </div>
           </>
@@ -141,6 +266,36 @@ export default function Generator({ type }: GeneratorProps) {
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
               placeholder="https://example.com"
             />
+          </div>
+        );
+
+      case "pdf":
+      case "image":
+      case "video":
+      case "mp3":
+        return (
+          <div>
+            <Label>رفع الملف</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                onChange={handleFileUpload}
+                accept={
+                  type === "pdf"
+                    ? ".pdf"
+                    : type === "image"
+                    ? "image/*"
+                    : type === "video"
+                    ? "video/*"
+                    : "audio/*"
+                }
+                disabled={uploadFileMutation.isPending}
+              />
+              {uploadFileMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            </div>
+            {uploadedFile && (
+              <p className="text-sm text-green-600 mt-2">✓ تم رفع الملف: {uploadedFile.fileName}</p>
+            )}
           </div>
         );
 
@@ -244,6 +399,209 @@ export default function Generator({ type }: GeneratorProps) {
           </div>
         );
 
+      case "social":
+        return (
+          <>
+            <div>
+              <Label>الاسم</Label>
+              <Input
+                value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="اسمك"
+              />
+            </div>
+            <div>
+              <Label>السيرة الذاتية (اختياري)</Label>
+              <Textarea
+                value={formData.bio || ""}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                placeholder="نبذة عنك"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Instagram</Label>
+                <Input
+                  value={formData.instagram || ""}
+                  onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                  placeholder="username"
+                />
+              </div>
+              <div>
+                <Label>Facebook</Label>
+                <Input
+                  value={formData.facebook || ""}
+                  onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
+                  placeholder="username"
+                />
+              </div>
+              <div>
+                <Label>Twitter</Label>
+                <Input
+                  value={formData.twitter || ""}
+                  onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
+                  placeholder="username"
+                />
+              </div>
+              <div>
+                <Label>LinkedIn</Label>
+                <Input
+                  value={formData.linkedin || ""}
+                  onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                  placeholder="username"
+                />
+              </div>
+            </div>
+          </>
+        );
+
+      case "business":
+        return (
+          <>
+            <div>
+              <Label>اسم الشركة</Label>
+              <Input
+                value={formData.companyName || ""}
+                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                placeholder="اسم شركتك"
+              />
+            </div>
+            <div>
+              <Label>الوصف</Label>
+              <Textarea
+                value={formData.description || ""}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="وصف الشركة"
+              />
+            </div>
+            <div>
+              <Label>المجال</Label>
+              <Input
+                value={formData.industry || ""}
+                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                placeholder="مجال العمل"
+              />
+            </div>
+            <div>
+              <Label>الموقع الإلكتروني</Label>
+              <Input
+                value={formData.website || ""}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                placeholder="https://example.com"
+              />
+            </div>
+            <div>
+              <Label>الهاتف</Label>
+              <Input
+                value={formData.phone || ""}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+966501234567"
+              />
+            </div>
+            <div>
+              <Label>البريد الإلكتروني</Label>
+              <Input
+                type="email"
+                value={formData.email || ""}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="info@example.com"
+              />
+            </div>
+            <div>
+              <Label>العنوان</Label>
+              <Input
+                value={formData.address || ""}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="العنوان الكامل"
+              />
+            </div>
+          </>
+        );
+
+      case "coupon":
+        return (
+          <>
+            <div>
+              <Label>العنوان</Label>
+              <Input
+                value={formData.title || ""}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="عنوان القسيمة"
+              />
+            </div>
+            <div>
+              <Label>الوصف</Label>
+              <Textarea
+                value={formData.description || ""}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="وصف القسيمة"
+              />
+            </div>
+            <div>
+              <Label>الخصم</Label>
+              <Input
+                value={formData.discount || ""}
+                onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                placeholder="50% خصم"
+              />
+            </div>
+            <div>
+              <Label>رمز القسيمة</Label>
+              <Input
+                value={formData.code || ""}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                placeholder="SAVE50"
+              />
+            </div>
+            <div>
+              <Label>صالح حتى</Label>
+              <Input
+                type="date"
+                value={formData.validUntil || ""}
+                onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
+              />
+            </div>
+          </>
+        );
+
+      case "menu":
+        return (
+          <>
+            <div>
+              <Label>اسم المطعم</Label>
+              <Input
+                value={formData.restaurantName || ""}
+                onChange={(e) => setFormData({ ...formData, restaurantName: e.target.value })}
+                placeholder="اسم المطعم"
+              />
+            </div>
+            <div>
+              <Label>الوصف</Label>
+              <Textarea
+                value={formData.description || ""}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="وصف المطعم"
+              />
+            </div>
+            <div>
+              <Label>الهاتف</Label>
+              <Input
+                value={formData.phone || ""}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+966501234567"
+              />
+            </div>
+            <div>
+              <Label>العنوان</Label>
+              <Input
+                value={formData.address || ""}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="العنوان الكامل"
+              />
+            </div>
+          </>
+        );
+
       default:
         return (
           <div>
@@ -257,6 +615,35 @@ export default function Generator({ type }: GeneratorProps) {
         );
     }
   };
+
+  if (showTemplate && templateHtml) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <button
+            onClick={() => setShowTemplate(false)}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            العودة
+          </button>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>معاينة القالب</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <iframe
+                srcDoc={templateHtml}
+                className="w-full h-screen border rounded-lg"
+                title="Template Preview"
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -320,11 +707,11 @@ export default function Generator({ type }: GeneratorProps) {
                     alt="QR Code"
                     className="w-full max-w-sm mx-auto border rounded-lg p-4 bg-white"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap justify-center">
                     <Button
                       onClick={handleDownload}
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 min-w-fit"
                     >
                       <Download className="w-4 h-4 mr-2" />
                       تحميل
@@ -332,7 +719,7 @@ export default function Generator({ type }: GeneratorProps) {
                     <Button
                       onClick={handleCopy}
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 min-w-fit"
                     >
                       {copied ? (
                         <>
@@ -346,6 +733,16 @@ export default function Generator({ type }: GeneratorProps) {
                         </>
                       )}
                     </Button>
+                    {["vcard", "social", "business"].includes(type) && (
+                      <Button
+                        onClick={handleShowTemplate}
+                        variant="outline"
+                        className="flex-1 min-w-fit"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        عرض القالب
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
