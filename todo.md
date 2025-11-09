@@ -62,3 +62,13 @@
 - [x] Create professional HTML template for coupons/discounts
 - [x] Integrate S3 storage for uploaded files
 - [x] Update QR code generation to include file URLs
+
+
+## Cleanup - Remove Unnecessary QR Types
+- [x] Remove Website URL QR type
+- [x] Remove Facebook QR type
+- [x] Remove Instagram QR type
+- [x] Remove Social Media Contacts QR type
+- [x] Update Home page to remove these options
+- [x] Update QR code generator logic
+- [x] Test remaining QR types

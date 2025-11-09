@@ -399,61 +399,6 @@ export default function Generator({ type }: GeneratorProps) {
           </div>
         );
 
-      case "social":
-        return (
-          <>
-            <div>
-              <Label>الاسم</Label>
-              <Input
-                value={formData.name || ""}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="اسمك"
-              />
-            </div>
-            <div>
-              <Label>السيرة الذاتية (اختياري)</Label>
-              <Textarea
-                value={formData.bio || ""}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                placeholder="نبذة عنك"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Instagram</Label>
-                <Input
-                  value={formData.instagram || ""}
-                  onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-                  placeholder="username"
-                />
-              </div>
-              <div>
-                <Label>Facebook</Label>
-                <Input
-                  value={formData.facebook || ""}
-                  onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
-                  placeholder="username"
-                />
-              </div>
-              <div>
-                <Label>Twitter</Label>
-                <Input
-                  value={formData.twitter || ""}
-                  onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
-                  placeholder="username"
-                />
-              </div>
-              <div>
-                <Label>LinkedIn</Label>
-                <Input
-                  value={formData.linkedin || ""}
-                  onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                  placeholder="username"
-                />
-              </div>
-            </div>
-          </>
-        );
 
       case "business":
         return (
