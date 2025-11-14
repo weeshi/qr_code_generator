@@ -160,6 +160,23 @@ function MyQRCodes() {
             {qr.qrDataUrl && (
               <img src={qr.qrDataUrl} alt={qr.name} className="w-full h-auto mb-4" />
             )}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-gray-600">عدد المسحات</p>
+                  <p className="font-semibold text-lg text-blue-600">{qr.scanCount || 0}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">التحميلات</p>
+                  <p className="font-semibold text-lg text-green-600">{qr.downloadCount || 0}</p>
+                </div>
+              </div>
+              {qr.lastScannedAt && (
+                <p className="text-xs text-gray-500 mt-2">
+                  آخر مسح: {new Date(qr.lastScannedAt).toLocaleDateString('ar-SA')}
+                </p>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1">
                 تحميل

@@ -38,6 +38,8 @@ export const qrCodes = mysqlTable("qr_codes", {
   qrDataUrl: text("qrDataUrl"), // Base64 encoded QR code image
   qrSvg: text("qrSvg"), // SVG representation of QR code
   downloadCount: int("downloadCount").default(0),
+  scanCount: int("scanCount").default(0),
+  lastScannedAt: timestamp("lastScannedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -9,6 +9,8 @@ import {
   getQRCodeById,
   deleteQRCode,
   updateQRCode,
+  recordQRCodeScan,
+  getQRCodeStats,
 } from "./db";
 import { generateQRCodeByType } from "./qrGenerator";
 import {
@@ -88,6 +90,8 @@ export const appRouter = router({
         qrDataUrl: qr.qrDataUrl,
         qrSvg: qr.qrSvg,
         downloadCount: qr.downloadCount,
+        scanCount: qr.scanCount,
+        lastScannedAt: qr.lastScannedAt,
         createdAt: qr.createdAt,
         updatedAt: qr.updatedAt,
       }));
@@ -165,6 +169,34 @@ export const appRouter = router({
           success: true,
           message: "QR code deleted successfully",
         };
+      }),
+
+    // Record a QR code scan
+    recordScan: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          await recordQRCodeScan(input.id);
+          return {
+            success: true,
+            message: "Scan recorded successfully",
+          };
+        } catch (error) {
+          throw new Error(
+            `Failed to record scan: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }),
+
+    // Get QR code statistics
+    stats: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const stats = await getQRCodeStats(input.id, ctx.user.id);
+        if (!stats) {
+          throw new Error("QR code not found");
+        }
+        return stats;
       }),
 
     // Upload file for media-based QR codes

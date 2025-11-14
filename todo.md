@@ -72,3 +72,12 @@
 - [x] Update Home page to remove these options
 - [x] Update QR code generator logic
 - [x] Test remaining QR types
+
+
+## QR Code Scan Tracking Feature
+- [x] Update database schema to add scanCount and lastScannedAt fields
+- [x] Create migration for new tracking fields
+- [x] Add tracking endpoint to increment scan count
+- [x] Update QR code display to show scan statistics
+- [x] Add analytics dashboard for scan statistics
+- [x] Test tracking functionality

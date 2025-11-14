@@ -155,3 +155,52 @@ export async function updateQRCode(id: number, userId: number, updates: Partial<
 
   return result;
 }
+
+
+export async function recordQRCodeScan(id: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get current scan count
+  const current = await db
+    .select({ scanCount: qrCodes.scanCount })
+    .from(qrCodes)
+    .where(eq(qrCodes.id, id))
+    .limit(1);
+
+  const newScanCount = (current[0]?.scanCount ?? 0) + 1;
+
+  const result = await db
+    .update(qrCodes)
+    .set({
+      scanCount: newScanCount,
+      lastScannedAt: new Date(),
+    })
+    .where(eq(qrCodes.id, id));
+
+  return result;
+}
+
+export async function getQRCodeStats(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get QR code stats: database not available");
+    return undefined;
+  }
+
+  const result = await db
+    .select({
+      id: qrCodes.id,
+      scanCount: qrCodes.scanCount,
+      lastScannedAt: qrCodes.lastScannedAt,
+      downloadCount: qrCodes.downloadCount,
+      createdAt: qrCodes.createdAt,
+    })
+    .from(qrCodes)
+    .where(and(eq(qrCodes.id, id), eq(qrCodes.userId, userId)))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
