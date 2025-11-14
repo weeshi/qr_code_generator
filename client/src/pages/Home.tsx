@@ -21,6 +21,7 @@ import {
   Package,
   UtensilsCrossed,
   Loader2,
+  Scan,
 } from "lucide-react";
 
 const QR_TYPES = [
@@ -79,9 +80,18 @@ export default function Home() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <QrCode className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">{APP_TITLE}</h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <QrCode className="w-8 h-8 text-blue-600" />
+              <h1 className="text-3xl font-bold text-gray-900">{APP_TITLE}</h1>
+            </div>
+            <Button
+              onClick={() => setLocation("/scanner")}
+              className="bg-green-600 hover:bg-green-700 gap-2"
+            >
+              <Scan className="w-4 h-4" />
+              ماسح QR
+            </Button>
           </div>
           <p className="text-gray-600">اختر نوع رمز QR الذي تريد إنشاءه</p>
         </div>

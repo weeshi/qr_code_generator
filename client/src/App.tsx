@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Generator from "./pages/Generator";
+import Scanner from "./pages/Scanner";
 import { useRoute } from "wouter";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path={"/generator/:type"}>
         {(params: any) => <Generator type={params.type} />}
       </Route>
+      <Route path={"/scanner"} component={Scanner} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

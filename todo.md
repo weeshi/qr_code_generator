@@ -81,3 +81,14 @@
 - [x] Update QR code display to show scan statistics
 - [x] Add analytics dashboard for scan statistics
 - [x] Test tracking functionality
+
+
+## QR Code Scanning Feature
+- [x] Install QR code scanning library (jsQR or similar)
+- [x] Create Scanner page component
+- [x] Add camera access functionality
+- [x] Add image upload for QR scanning
+- [x] Implement QR code decoding logic
+- [x] Display scanned QR code results
+- [x] Add navigation to Scanner page
+- [x] Test scanning with camera and images
