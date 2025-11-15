@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, Camera, Upload, X, CheckCircle } from "lucide-react";
+import { QrCode, Camera, Upload, X, CheckCircle, Mail, MessageSquare, Share2 } from "lucide-react";
 import jsQR from "jsqr";
 
 interface ScanResult {
@@ -20,6 +20,7 @@ export default function Scanner() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   // Start camera
   const startCamera = async () => {
@@ -120,6 +121,40 @@ export default function Scanner() {
   const copyToClipboard = () => {
     if (scanResult) {
       navigator.clipboard.writeText(scanResult.data);
+    }
+  };
+
+  // Share via email
+  const shareViaEmail = () => {
+    if (scanResult) {
+      const subject = encodeURIComponent("محتوى رمز QR");
+      const body = encodeURIComponent(`محتوى رمز QR الممسوح:\n\n${scanResult.data}`);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      setShowShareMenu(false);
+    }
+  };
+
+  // Share via SMS
+  const shareViaSMS = () => {
+    if (scanResult) {
+      const message = encodeURIComponent(`محتوى رمز QR: ${scanResult.data}`);
+      window.location.href = `sms:?body=${message}`;
+      setShowShareMenu(false);
+    }
+  };
+
+  // Share via Web Share API
+  const shareViaWebShare = async () => {
+    if (scanResult && navigator.share) {
+      try {
+        await navigator.share({
+          title: "محتوى رمز QR",
+          text: `محتوى رمز QR الممسوح: ${scanResult.data}`,
+        });
+        setShowShareMenu(false);
+      } catch (err) {
+        console.error("Share error:", err);
+      }
     }
   };
 
@@ -251,27 +286,66 @@ export default function Scanner() {
                     {scanResult.data}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={copyToClipboard}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    نسخ
-                  </Button>
-                  {(scanResult.data.startsWith("http://") ||
-                    scanResult.data.startsWith("https://")) && (
-                    <Button onClick={openLink} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                      فتح الرابط
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={copyToClipboard}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      نسخ
                     </Button>
-                  )}
+                    {(scanResult.data.startsWith("http://") ||
+                      scanResult.data.startsWith("https://")) && (
+                      <Button onClick={openLink} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                        فتح الرابط
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => setScanResult(null)}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      مسح جديد
+                    </Button>
+                  </div>
                   <Button
-                    onClick={() => setScanResult(null)}
-                    variant="outline"
-                    className="flex-1"
+                    onClick={() => setShowShareMenu(!showShareMenu)}
+                    className="w-full bg-green-600 hover:bg-green-700 gap-2"
                   >
-                    مسح جديد
+                    <Share2 className="w-4 h-4" />
+                    مشاركة
                   </Button>
+                  {showShareMenu && (
+                    <div className="bg-white border border-gray-200 rounded-lg shadow-lg space-y-1">
+                      <Button
+                        onClick={shareViaEmail}
+                        variant="ghost"
+                        className="w-full justify-start gap-2"
+                      >
+                        <Mail className="w-4 h-4" />
+                        مشاركة عبر البريد الإلكتروني
+                      </Button>
+                      <Button
+                        onClick={shareViaSMS}
+                        variant="ghost"
+                        className="w-full justify-start gap-2"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        مشاركة عبر الرسائل النصية
+                      </Button>
+                      {'share' in navigator && (
+                        <Button
+                          onClick={shareViaWebShare}
+                          variant="ghost"
+                          className="w-full justify-start gap-2"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          مشاركة أخرى
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

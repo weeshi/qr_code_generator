@@ -92,3 +92,12 @@
 - [x] Display scanned QR code results
 - [x] Add navigation to Scanner page
 - [x] Test scanning with camera and images
+
+
+## Sharing Functionality for Scanned QR Codes
+- [x] Create sharing modal/dialog component
+- [x] Add email sharing functionality
+- [x] Add SMS sharing functionality
+- [x] Implement share button in Scanner page
+- [x] Add share options for different content types
+- [x] Test email and SMS sharing
