@@ -46,3 +46,18 @@ export const qrCodes = mysqlTable("qr_codes", {
 
 export type QRCode = typeof qrCodes.$inferSelect;
 export type InsertQRCode = typeof qrCodes.$inferInsert;
+
+/**
+ * Scan History table
+ * Stores all scanned QR codes by users
+ */
+export const scanHistory = mysqlTable("scan_history", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  scannedData: text("scannedData").notNull(), // The content of the scanned QR code
+  dataType: varchar("dataType", { length: 50 }), // Type of data (url, text, etc)
+  scannedAt: timestamp("scannedAt").defaultNow().notNull(),
+});
+
+export type ScanHistory = typeof scanHistory.$inferSelect;
+export type InsertScanHistory = typeof scanHistory.$inferInsert;

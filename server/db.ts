@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, qrCodes, InsertQRCode } from "../drizzle/schema";
+import { InsertUser, users, qrCodes, InsertQRCode, scanHistory, InsertScanHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -203,4 +203,63 @@ export async function getQRCodeStats(id: number, userId: number) {
     .limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function addScanHistory(userId: number, scannedData: string, dataType?: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot add scan history: database not available");
+    return;
+  }
+
+  try {
+    await db.insert(scanHistory).values({
+      userId,
+      scannedData,
+      dataType: dataType || 'unknown',
+      scannedAt: new Date(),
+    });
+  } catch (error) {
+    console.error("[Database] Failed to add scan history:", error);
+  }
+}
+
+export async function getUserScanHistory(userId: number, limit: number = 100, offset: number = 0) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get scan history: database not available");
+    return [];
+  }
+
+  const result = await db
+    .select()
+    .from(scanHistory)
+    .where(eq(scanHistory.userId, userId))
+    .orderBy((t) => [desc(t.scannedAt)])
+    .limit(limit)
+    .offset(offset);
+
+  return result;
+}
+
+export async function deleteScanHistoryItem(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .delete(scanHistory)
+    .where(and(eq(scanHistory.id, id), eq(scanHistory.userId, userId)));
+}
+
+export async function clearUserScanHistory(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .delete(scanHistory)
+    .where(eq(scanHistory.userId, userId));
 }

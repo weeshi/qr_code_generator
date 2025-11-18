@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QrCode, Camera, Upload, X, CheckCircle, Mail, MessageSquare, Share2 } from "lucide-react";
 import jsQR from "jsqr";
+import { trpc } from "@/lib/trpc";
 
 interface ScanResult {
   data: string;
@@ -21,6 +22,9 @@ export default function Scanner() {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+
+  // Add to history mutation
+  const addToHistoryMutation = trpc.qrCode.addToHistory.useMutation();
 
   // Start camera
   const startCamera = async () => {
@@ -68,9 +72,15 @@ export default function Scanner() {
           const code = jsQR(imageData.data, imageData.width, imageData.height);
 
           if (code) {
-            setScanResult({
+            const result = {
               data: code.data,
               timestamp: new Date(),
+            };
+            setScanResult(result);
+            // Add to history
+            addToHistoryMutation.mutate({
+              scannedData: code.data,
+              dataType: code.data.startsWith('http') ? 'url' : 'text',
             });
             setIsScanning(false);
             stopCamera();
@@ -102,9 +112,15 @@ export default function Scanner() {
             const code = jsQR(imageData.data, imageData.width, imageData.height);
 
             if (code) {
-              setScanResult({
+              const result = {
                 data: code.data,
                 timestamp: new Date(),
+              };
+              setScanResult(result);
+              // Add to history
+              addToHistoryMutation.mutate({
+                scannedData: code.data,
+                dataType: code.data.startsWith('http') ? 'url' : 'text',
               });
             } else {
               setError("لم يتم العثور على رمز QR في الصورة");

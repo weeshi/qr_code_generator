@@ -11,6 +11,10 @@ import {
   updateQRCode,
   recordQRCodeScan,
   getQRCodeStats,
+  addScanHistory,
+  getUserScanHistory,
+  deleteScanHistoryItem,
+  clearUserScanHistory,
 } from "./db";
 import { generateQRCodeByType } from "./qrGenerator";
 import {
@@ -197,6 +201,47 @@ export const appRouter = router({
           throw new Error("QR code not found");
         }
         return stats;
+      }),
+
+    // Add scan to history
+    addToHistory: protectedProcedure
+      .input(
+        z.object({
+          scannedData: z.string(),
+          dataType: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await addScanHistory(ctx.user.id, input.scannedData, input.dataType);
+        return { success: true };
+      }),
+
+    // Get scan history
+    getHistory: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().default(100),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const history = await getUserScanHistory(ctx.user.id, input.limit, input.offset);
+        return history;
+      }),
+
+    // Delete scan history item
+    deleteHistoryItem: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteScanHistoryItem(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Clear all scan history
+    clearHistory: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await clearUserScanHistory(ctx.user.id);
+        return { success: true };
       }),
 
     // Upload file for media-based QR codes
