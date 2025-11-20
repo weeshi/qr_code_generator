@@ -1,7 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
@@ -23,6 +22,9 @@ import {
   Loader2,
   Scan,
   History,
+  Zap,
+  Shield,
+  BarChart3,
 } from "lucide-react";
 
 const QR_TYPES = [
@@ -38,6 +40,24 @@ const QR_TYPES = [
   { id: "coupon", label: "قسيمة", icon: Ticket, description: "مشاركة قسيمة" },
   { id: "app", label: "التطبيقات", icon: Package, description: "إعادة التوجيه إلى متجر التطبيقات" },
   { id: "menu", label: "القائمة", icon: UtensilsCrossed, description: "إنشاء قائمة مطعم" },
+];
+
+const FEATURES = [
+  {
+    icon: Zap,
+    title: "سريع وسهل",
+    description: "إنشاء رموز QR احترافية في ثوانٍ معدودة بدون الحاجة لمهارات تقنية",
+  },
+  {
+    icon: BarChart3,
+    title: "تتبع الأداء",
+    description: "راقب عدد مرات مسح كل رمز QR والإحصائيات المفصلة للاستخدام",
+  },
+  {
+    icon: Shield,
+    title: "آمن وموثوق",
+    description: "حماية بيانات عالية وتخزين آمن لجميع رموز QR الخاصة بك",
+  },
 ];
 
 export default function Home() {
@@ -77,71 +97,170 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <QrCode className="w-8 h-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">{APP_TITLE}</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div
+        className="relative h-96 md:h-[500px] bg-cover bg-center flex items-center justify-center"
+        style={{
+          backgroundImage: 'url(/hero-bg.jpg)',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="relative z-10 text-center text-white px-4 max-w-2xl">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">إنشاء رموز QR احترافية بسهولة</h1>
+          <p className="text-lg md:text-xl mb-8 text-gray-100">
+            قم بتحويل محتواك إلى رموز QR قابلة للمسح فوراً. مشاركة بطاقات العمل، الروابط، الملفات، والمزيد بطريقة حديثة وفعالة.
+          </p>
+          <Button
+            size="lg"
+            className="bg-green-500 hover:bg-green-600 text-white gap-2 text-lg px-8"
+            onClick={() => {
+              const element = document.getElementById('qr-types');
+              element?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <QrCode className="w-5 h-5" />
+            ابدأ الآن
+          </Button>
+        </div>
+      </div>
+
+      <div className="p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <QrCode className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-gray-900">{APP_TITLE}</h1>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setLocation("/history")}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <History className="w-4 h-4" />
+                  السجل
+                </Button>
+                <Button
+                  onClick={() => setLocation("/scanner")}
+                  className="bg-green-600 hover:bg-green-700 gap-2"
+                >
+                  <Scan className="w-4 h-4" />
+                  ماسح QR
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setLocation("/history")}
-                variant="outline"
-                className="gap-2"
-              >
-                <History className="w-4 h-4" />
-                السجل
-              </Button>
-              <Button
-                onClick={() => setLocation("/scanner")}
-                className="bg-green-600 hover:bg-green-700 gap-2"
-              >
-                <Scan className="w-4 h-4" />
-                ماسح QR
-              </Button>
+            <p className="text-gray-600">اختر نوع رمز QR الذي تريد إنشاءه</p>
+          </div>
+
+          {/* QR Type Selection Grid */}
+          <div id="qr-types" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+            {QR_TYPES.map((type) => {
+              const Icon = type.icon;
+              return (
+                <Card
+                  key={type.id}
+                  className={`cursor-pointer transition-all hover:shadow-lg ${
+                    selectedType === type.id ? "ring-2 ring-blue-500 bg-blue-50" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedType(type.id);
+                    setLocation(`/generator/${type.id}`);
+                  }}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Icon className="w-6 h-6 text-green-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{type.label}</CardTitle>
+                        <CardDescription className="text-xs">{type.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Features Section */}
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">لماذا تختار تطبيقنا؟</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {FEATURES.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="p-3 bg-blue-100 rounded-lg mb-4">
+                          <Icon className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                        <p className="text-gray-600 text-sm">{feature.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
-          <p className="text-gray-600">اختر نوع رمز QR الذي تريد إنشاءه</p>
-        </div>
 
-        {/* QR Type Selection Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {QR_TYPES.map((type) => {
-            const Icon = type.icon;
-            return (
-              <Card
-                key={type.id}
-                className={`cursor-pointer transition-all hover:shadow-lg ${
-                  selectedType === type.id ? "ring-2 ring-blue-500 bg-blue-50" : ""
-                }`}
-                onClick={() => {
-                  setSelectedType(type.id);
-                  setLocation(`/generator/${type.id}`);
-                }}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <Icon className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{type.label}</CardTitle>
-                      <CardDescription className="text-xs">{type.description}</CardDescription>
-                    </div>
+          {/* Usage Guide Section */}
+          <div className="mb-12 bg-blue-50 rounded-lg p-6 md:p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">كيفية الاستخدام</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-md bg-green-500 text-white font-bold">
+                    1
                   </div>
-                </CardHeader>
-              </Card>
-            );
-          })}
-        </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">اختر نوع QR</h3>
+                  <p className="text-gray-600">
+                    حدد نوع المحتوى الذي تريد تحويله إلى رمز QR من الخيارات المتاحة أعلاه
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-md bg-green-500 text-white font-bold">
+                    2
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">أدخل البيانات</h3>
+                  <p className="text-gray-600">
+                    ملء النموذج بالمعلومات المطلوبة مثل الروابط أو بيانات الاتصال أو الملفات
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-md bg-green-500 text-white font-bold">
+                    3
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">حمّل واستخدم</h3>
+                  <p className="text-gray-600">
+                    حمّل رمز QR وشاركه مع الآخرين أو استخدمه في مشاريعك بسهولة
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        {/* My QR Codes Section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">رموز QR الخاصة بي</h2>
-          <MyQRCodes />
+          {/* My QR Codes Section */}
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">رموز QR الخاصة بي</h2>
+            <MyQRCodes />
+          </div>
         </div>
       </div>
     </div>

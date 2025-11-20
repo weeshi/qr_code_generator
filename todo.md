@@ -113,3 +113,13 @@
 - [x] Add delete functionality
 - [x] Add navigation to history page
 - [x] Test scan history features
+
+
+## Hero Section & Usage Guide
+- [x] Generate professional background image for hero section
+- [x] Create hero section component with title, description, and CTA button
+- [x] Add hero section to Home page
+- [x] Create usage guide content sections
+- [x] Add explanatory cards for QR code features
+- [x] Integrate hero section styling
+- [x] Test hero section responsiveness
