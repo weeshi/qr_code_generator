@@ -123,3 +123,13 @@
 - [x] Add explanatory cards for QR code features
 - [x] Integrate hero section styling
 - [x] Test hero section responsiveness
+
+
+## Main Navigation Menu
+- [x] Create Navigation component with dropdown menus
+- [x] Add menu items for QR creation, scanning, history, and account
+- [x] Implement dropdown functionality for QR types
+- [x] Add responsive mobile menu
+- [x] Integrate navigation into App layout
+- [x] Style navigation with professional design
+- [x] Test navigation functionality
