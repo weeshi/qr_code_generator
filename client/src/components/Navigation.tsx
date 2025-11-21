@@ -136,6 +136,14 @@ export default function Navigation() {
                   {user?.email}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setLocation("/my-qrcodes")} 
+                  className="gap-2 cursor-pointer"
+                >
+                  <QrCode className="w-4 h-4" />
+                  رموزي
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer text-red-600">
                   <LogOut className="w-4 h-4" />
                   تسجيل الخروج
@@ -181,6 +189,17 @@ export default function Navigation() {
             >
               <History className="w-4 h-4" />
               سجل المسحات
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2"
+              onClick={() => {
+                setLocation("/my-qrcodes");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <QrCode className="w-4 h-4" />
+              رموزي
             </Button>
             <Button
               variant="ghost"

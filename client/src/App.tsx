@@ -5,10 +5,12 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Navigation from "./components/Navigation";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Generator from "./pages/Generator";
 import Scanner from "./pages/Scanner";
 import ScanHistory from "./pages/ScanHistory";
+import MyQRCodes from "./pages/MyQRCodes";
 import { useRoute } from "wouter";
 
 function Router() {
@@ -21,6 +23,7 @@ function Router() {
       </Route>
       <Route path={"/scanner"} component={Scanner} />
       <Route path={"/history"} component={ScanHistory} />
+      <Route path={"/my-qrcodes"} component={MyQRCodes} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -44,6 +47,7 @@ function App() {
           <Toaster />
           <Navigation />
           <Router />
+          <Footer />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

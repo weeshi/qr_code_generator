@@ -256,78 +256,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* My QR Codes Section */}
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">رموز QR الخاصة بي</h2>
-            <MyQRCodes />
-          </div>
+
         </div>
       </div>
-    </div>
-  );
-}
-
-function MyQRCodes() {
-  const { data: qrCodes, isLoading } = trpc.qrCode.list.useQuery();
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center">
-        <Loader2 className="animate-spin w-6 h-6" />
-      </div>
-    );
-  }
-
-  if (!qrCodes || qrCodes.length === 0) {
-    return (
-      <Card className="bg-white">
-        <CardContent className="pt-6 text-center">
-          <p className="text-gray-500">لم تقم بإنشاء أي رموز QR حتى الآن</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {qrCodes.map((qr) => (
-        <Card key={qr.id} className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-lg">{qr.name}</CardTitle>
-            <CardDescription>{qr.type}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {qr.qrDataUrl && (
-              <img src={qr.qrDataUrl} alt={qr.name} className="w-full h-auto mb-4" />
-            )}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-gray-600">عدد المسحات</p>
-                  <p className="font-semibold text-lg text-blue-600">{qr.scanCount || 0}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">التحميلات</p>
-                  <p className="font-semibold text-lg text-green-600">{qr.downloadCount || 0}</p>
-                </div>
-              </div>
-              {qr.lastScannedAt && (
-                <p className="text-xs text-gray-500 mt-2">
-                  آخر مسح: {new Date(qr.lastScannedAt).toLocaleDateString('ar-SA')}
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1">
-                تحميل
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1">
-                مشاركة
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
     </div>
   );
 }
