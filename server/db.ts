@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, qrCodes, InsertQRCode, scanHistory, InsertScanHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -262,4 +262,106 @@ export async function clearUserScanHistory(userId: number) {
   await db
     .delete(scanHistory)
     .where(eq(scanHistory.userId, userId));
+}
+
+
+// Admin functions for user management
+export async function getAllUsers(limit: number = 50, offset: number = 0) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get users: database not available");
+    return [];
+  }
+
+  const result = await db
+    .select()
+    .from(users)
+    .orderBy((t) => [desc(t.createdAt)])
+    .limit(limit)
+    .offset(offset);
+
+  return result;
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUserRole(userId: number, role: 'user' | 'admin') {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .update(users)
+    .set({ role })
+    .where(eq(users.id, userId));
+}
+
+export async function getUserStats(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user stats: database not available");
+    return null;
+  }
+
+  const qrCount = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(qrCodes)
+    .where(eq(qrCodes.userId, userId));
+
+  const scanCount = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(scanHistory)
+    .where(eq(scanHistory.userId, userId));
+
+  return {
+    qrCodeCount: qrCount[0]?.count || 0,
+    scanCount: scanCount[0]?.count || 0,
+  };
+}
+
+export async function getSystemStats() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get system stats: database not available");
+    return null;
+  }
+
+  const totalUsers = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(users);
+
+  const totalQRCodes = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(qrCodes);
+
+  const totalScans = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(scanHistory);
+
+  const adminCount = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(users)
+    .where(eq(users.role, 'admin'));
+
+  return {
+    totalUsers: totalUsers[0]?.count || 0,
+    totalQRCodes: totalQRCodes[0]?.count || 0,
+    totalScans: totalScans[0]?.count || 0,
+    adminCount: adminCount[0]?.count || 0,
+  };
 }

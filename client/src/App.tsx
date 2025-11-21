@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
+import AdminDashboard from "@/pages/AdminDashboard";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -11,7 +12,6 @@ import Generator from "./pages/Generator";
 import Scanner from "./pages/Scanner";
 import ScanHistory from "./pages/ScanHistory";
 import MyQRCodes from "./pages/MyQRCodes";
-import { useRoute } from "wouter";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -23,7 +23,8 @@ function Router() {
       </Route>
       <Route path={"/scanner"} component={Scanner} />
       <Route path={"/history"} component={ScanHistory} />
-      <Route path={"/my-qrcodes"} component={MyQRCodes} />
+      <Route path={"/my-qr-codes"} component={MyQRCodes} />
+      <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

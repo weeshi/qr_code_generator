@@ -143,6 +143,18 @@ export default function Navigation() {
                   <QrCode className="w-4 h-4" />
                   رموزي
                 </DropdownMenuItem>
+                {user?.role === "admin" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => setLocation("/admin")} 
+                      className="gap-2 cursor-pointer text-blue-600"
+                    >
+                      <User className="w-4 h-4" />
+                      لوحة التحكم
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer text-red-600">
                   <LogOut className="w-4 h-4" />

@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import {
   createQRCode,
@@ -15,6 +15,11 @@ import {
   getUserScanHistory,
   deleteScanHistoryItem,
   clearUserScanHistory,
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  getUserStats,
+  getSystemStats,
 } from "./db";
 import { generateQRCodeByType } from "./qrGenerator";
 import {
@@ -287,6 +292,52 @@ export const appRouter = router({
             `File upload failed: ${error instanceof Error ? error.message : String(error)}`
           );
         }
+      }),
+  }),
+
+  // Admin Management
+  admin: router({
+    // Get all users
+    getAllUsers: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().default(50),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        const users = await getAllUsers(input.limit, input.offset);
+        return users;
+      }),
+
+    // Get user details
+    getUserDetails: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const user = await getUserById(input.userId);
+        if (!user) throw new Error("User not found");
+        const stats = await getUserStats(input.userId);
+        return { ...user, stats };
+      }),
+
+    // Update user role
+    updateUserRole: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          role: z.enum(["user", "admin"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await updateUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+
+    // Get system statistics
+    getSystemStats: adminProcedure
+      .query(async () => {
+        const stats = await getSystemStats();
+        return stats;
       }),
   }),
 
