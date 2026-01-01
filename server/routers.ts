@@ -1,4 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
+import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
@@ -20,6 +21,12 @@ import {
   updateUserRole,
   getUserStats,
   getSystemStats,
+  grantPermission,
+  getUserPermissions,
+  hasActivePermission,
+  revokePermission,
+  getAllUserPermissions,
+  updatePermissionExpiry,
 } from "./db";
 import { generateQRCodeByType } from "./qrGenerator";
 import {
@@ -448,6 +455,80 @@ export const appRouter = router({
       .query(({ input }) => {
         const html = generateCouponTemplate(input);
         return { html };
+      }),
+  }),
+
+  // Permission management router
+  permissions: router({
+    grantPermission: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          permissionType: z.enum(["create_qr", "scan", "export", "share", "analytics"]),
+          durationMonths: z.number().min(1).max(12),
+          reason: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        try {
+          await grantPermission(
+            input.userId,
+            input.permissionType,
+            input.durationMonths,
+            ctx.user.id,
+            input.reason
+          );
+          return { success: true };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to grant permission",
+          });
+        }
+      }),
+
+    getUserPermissions: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        try {
+          return await getAllUserPermissions(input.userId);
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to fetch permissions",
+          });
+        }
+      }),
+
+    revokePermission: adminProcedure
+      .input(z.object({ permissionId: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          await revokePermission(input.permissionId);
+          return { success: true };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to revoke permission",
+          });
+        }
+      }),
+
+    checkPermission: protectedProcedure
+      .input(z.object({ permissionType: z.string() }))
+      .query(async ({ ctx, input }) => {
+        try {
+          const hasPermission = await hasActivePermission(
+            ctx.user.id,
+            input.permissionType
+          );
+          return { hasPermission };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to check permission",
+          });
+        }
       }),
   }),
 });

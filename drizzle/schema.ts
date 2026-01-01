@@ -61,3 +61,19 @@ export const scanHistory = mysqlTable("scan_history", {
 
 export type ScanHistory = typeof scanHistory.$inferSelect;
 export type InsertScanHistory = typeof scanHistory.$inferInsert;
+
+export const userPermissions = mysqlTable("user_permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  permissionType: mysqlEnum("permissionType", ["create_qr", "scan", "export", "share", "analytics"]).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  grantedAt: timestamp("grantedAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  grantedBy: int("grantedBy").references(() => users.id),
+  reason: text("reason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserPermission = typeof userPermissions.$inferSelect;
+export type InsertUserPermission = typeof userPermissions.$inferInsert;

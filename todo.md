@@ -156,3 +156,16 @@
 - [x] Add user ban/suspend functionality
 - [x] Implement admin access control in navigation
 - [x] Test admin dashboard functionality
+
+
+## Advanced Permission Management System
+- [x] Update database schema to add permissions table with time-based expiration
+- [x] Create backend API endpoints for permission management
+- [x] Add permission types (create_qr, scan, export, etc.)
+- [x] Implement permission duration selection (1-12 months)
+- [x] Update admin dashboard UI for permission assignment
+- [x] Add permission validation middleware
+- [x] Implement permission expiration checks
+- [x] Add permission history tracking
+- [x] Create user permission status display
+- [x] Test permission system functionality

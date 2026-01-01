@@ -1,6 +1,6 @@
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, qrCodes, InsertQRCode, scanHistory, InsertScanHistory } from "../drizzle/schema";
+import { InsertUser, users, qrCodes, InsertQRCode, scanHistory, InsertScanHistory, userPermissions, InsertUserPermission, UserPermission } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -364,4 +364,111 @@ export async function getSystemStats() {
     totalScans: totalScans[0]?.count || 0,
     adminCount: adminCount[0]?.count || 0,
   };
+}
+
+
+// Permission management functions
+export async function grantPermission(
+  userId: number,
+  permissionType: string,
+  durationMonths: number,
+  grantedBy: number,
+  reason?: string
+) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const expiresAt = new Date();
+  expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+
+  await db.insert(userPermissions).values({
+    userId,
+    permissionType: permissionType as any,
+    isActive: 1,
+    grantedAt: new Date(),
+    expiresAt,
+    grantedBy,
+    reason,
+  });
+}
+
+export async function getUserPermissions(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get permissions: database not available");
+    return [];
+  }
+
+  const result = await db
+    .select()
+    .from(userPermissions)
+    .where(eq(userPermissions.userId, userId))
+    .orderBy((t) => [desc(t.expiresAt)]);
+
+  return result;
+}
+
+export async function hasActivePermission(userId: number, permissionType: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot check permission: database not available");
+    return false;
+  }
+
+  const result = await db
+    .select()
+    .from(userPermissions)
+    .where(
+      and(
+        eq(userPermissions.userId, userId),
+        eq(userPermissions.permissionType, permissionType as any),
+        eq(userPermissions.isActive, 1),
+        gt(userPermissions.expiresAt, new Date())
+      )
+    )
+    .limit(1);
+
+  return result.length > 0;
+}
+
+export async function revokePermission(permissionId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .update(userPermissions)
+    .set({ isActive: 0 })
+    .where(eq(userPermissions.id, permissionId));
+}
+
+export async function getAllUserPermissions(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get all permissions: database not available");
+    return [];
+  }
+
+  const result = await db
+    .select()
+    .from(userPermissions)
+    .where(eq(userPermissions.userId, userId))
+    .orderBy((t) => [desc(t.createdAt)]);
+
+  return result;
+}
+
+export async function updatePermissionExpiry(permissionId: number, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .update(userPermissions)
+    .set({ expiresAt })
+    .where(eq(userPermissions.id, permissionId));
 }
