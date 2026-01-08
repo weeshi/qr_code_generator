@@ -77,3 +77,78 @@ export const userPermissions = mysqlTable("user_permissions", {
 
 export type UserPermission = typeof userPermissions.$inferSelect;
 export type InsertUserPermission = typeof userPermissions.$inferInsert;
+
+/**
+ * Subscription Plans table
+ * Defines available subscription tiers with their features and pricing
+ */
+export const subscriptionPlans = mysqlTable("subscription_plans", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(), // Free, Professional, Enterprise
+  description: text("description"),
+  monthlyPrice: int("monthlyPrice").default(0), // Price in cents
+  yearlyPrice: int("yearlyPrice"),
+  maxQRCodes: int("maxQRCodes").notNull(), // -1 for unlimited
+  maxScans: int("maxScans").notNull(), // -1 for unlimited
+  canExport: int("canExport").default(0).notNull(),
+  canShare: int("canShare").default(0).notNull(),
+  canAnalytics: int("canAnalytics").default(0).notNull(),
+  canCustomBranding: int("canCustomBranding").default(0).notNull(),
+  supportLevel: varchar("supportLevel", { length: 50 }), // basic, priority, premium
+  stripeProductId: varchar("stripeProductId", { length: 255 }),
+  stripePriceIdMonthly: varchar("stripePriceIdMonthly", { length: 255 }),
+  stripePriceIdYearly: varchar("stripePriceIdYearly", { length: 255 }),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type InsertSubscriptionPlan = typeof subscriptionPlans.$inferInsert;
+
+/**
+ * User Subscriptions table
+ * Tracks active subscriptions for each user
+ */
+export const userSubscriptions = mysqlTable("user_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  planId: int("planId").notNull().references(() => subscriptionPlans.id),
+  status: mysqlEnum("status", ["active", "inactive", "cancelled", "expired"]).default("active").notNull(),
+  billingCycle: mysqlEnum("billingCycle", ["monthly", "yearly"]).default("monthly").notNull(),
+  currentPeriodStart: timestamp("currentPeriodStart").notNull(),
+  currentPeriodEnd: timestamp("currentPeriodEnd").notNull(),
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
+  stripeCustomerId: varchar("stripeCustomerId", { length: 255 }),
+  cancelledAt: timestamp("cancelledAt"),
+  cancelReason: text("cancelReason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type InsertUserSubscription = typeof userSubscriptions.$inferInsert;
+
+/**
+ * Invoices table
+ * Stores billing invoices for user subscriptions
+ */
+export const invoices = mysqlTable("invoices", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  subscriptionId: int("subscriptionId").references(() => userSubscriptions.id),
+  amount: int("amount").notNull(), // Amount in cents
+  currency: varchar("currency", { length: 3 }).default("USD").notNull(),
+  status: mysqlEnum("status", ["draft", "sent", "paid", "failed", "cancelled"]).default("draft").notNull(),
+  invoiceNumber: varchar("invoiceNumber", { length: 100 }).unique(),
+  stripeInvoiceId: varchar("stripeInvoiceId", { length: 255 }),
+  pdfUrl: text("pdfUrl"),
+  dueDate: timestamp("dueDate"),
+  paidAt: timestamp("paidAt"),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = typeof invoices.$inferInsert;

@@ -27,6 +27,10 @@ import {
   revokePermission,
   getAllUserPermissions,
   updatePermissionExpiry,
+  getSubscriptionPlans,
+  getUserSubscription,
+  createUserSubscription,
+  getUserInvoices,
 } from "./db";
 import { generateQRCodeByType } from "./qrGenerator";
 import {
@@ -530,6 +534,52 @@ export const appRouter = router({
           });
         }
       }),
+  }),
+
+  subscription: router({
+    getPlans: publicProcedure.query(async () => {
+      try {
+        return await getSubscriptionPlans();
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch subscription plans",
+        });
+      }
+    }),
+    getUserSubscription: protectedProcedure.query(async ({ ctx }) => {
+      try {
+        return await getUserSubscription(ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch user subscription",
+        });
+      }
+    }),
+    createSubscription: protectedProcedure
+      .input(z.object({ planId: z.number(), billingCycle: z.enum(["monthly", "yearly"]) }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          await createUserSubscription(ctx.user.id, input.planId, input.billingCycle);
+          return { success: true };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create subscription",
+          });
+        }
+      }),
+    getInvoices: protectedProcedure.query(async ({ ctx }) => {
+      try {
+        return await getUserInvoices(ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch invoices",
+        });
+      }
+    }),
   }),
 });
 

@@ -472,3 +472,97 @@ export async function updatePermissionExpiry(permissionId: number, expiresAt: Da
     .set({ expiresAt })
     .where(eq(userPermissions.id, permissionId));
 }
+
+
+// Subscription Management Functions
+
+export async function getSubscriptionPlans() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { subscriptionPlans } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  const plans = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isActive, 1));
+  return plans;
+}
+
+export async function getUserSubscription(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { userSubscriptions, subscriptionPlans } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  
+  const result = await db
+    .select()
+    .from(userSubscriptions)
+    .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
+    .where(eq(userSubscriptions.userId, userId))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function createUserSubscription(userId: number, planId: number, billingCycle: "monthly" | "yearly") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { userSubscriptions } = await import("../drizzle/schema");
+  const now = new Date();
+  const endDate = new Date(now);
+  endDate.setMonth(endDate.getMonth() + (billingCycle === "yearly" ? 12 : 1));
+  
+  const result = await db.insert(userSubscriptions).values({
+    userId,
+    planId,
+    status: "active",
+    billingCycle,
+    currentPeriodStart: now,
+    currentPeriodEnd: endDate,
+  });
+  
+  return result;
+}
+
+export async function updateUserSubscription(subscriptionId: number, updates: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { userSubscriptions } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  
+  return await db
+    .update(userSubscriptions)
+    .set(updates)
+    .where(eq(userSubscriptions.id, subscriptionId));
+}
+
+export async function createInvoice(userId: number, subscriptionId: number | null, amount: number, description: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { invoices } = await import("../drizzle/schema");
+  const invoiceNumber = `INV-${Date.now()}`;
+  
+  const result = await db.insert(invoices).values({
+    userId,
+    subscriptionId,
+    amount,
+    currency: "USD",
+    status: "draft",
+    invoiceNumber,
+    description,
+  });
+  
+  return result;
+}
+
+export async function getUserInvoices(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { invoices } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  
+  return await db.select().from(invoices).where(eq(invoices.userId, userId));
+}
