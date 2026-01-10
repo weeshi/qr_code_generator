@@ -24,7 +24,7 @@ function Router() {
       <Route path={"/scanner"} component={Scanner} />
       <Route path={"/history"} component={ScanHistory} />
       <Route path={"/my-qr-codes"} component={MyQRCodes} />
-      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin-panel-secure-access-2024"} component={AdminDashboard} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
