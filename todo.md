@@ -195,3 +195,8 @@
 - [x] Create separate admin dashboard page with enhanced security
 - [x] Add admin access verification middleware
 - [x] Test admin panel security and unauthorized access attempts
+
+## تحسينات التجاوب على الموبايل
+- [x] تحسين تجاوب زر "ماسح QR" الأخضر في الصفحة الرئيسية
+- [x] إصلاح مشكلة خروج الزر عن الإطار على الشاشات الصغيرة
+- [x] اختبار الزر على أحجام شاشات مختلفة
