@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Administrator from "@/pages/Administrator";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -25,6 +26,7 @@ function Router() {
       <Route path={"/history"} component={ScanHistory} />
       <Route path={"/my-qr-codes"} component={MyQRCodes} />
       <Route path={"/admin-panel-secure-access-2024"} component={AdminDashboard} />
+      <Route path={"/administrator-system-management-secure"} component={Administrator} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

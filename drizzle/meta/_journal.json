@@ -43,6 +43,13 @@
       "when": 1767908673333,
       "tag": "0005_silent_kree",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1770934673293,
+      "tag": "0006_aromatic_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

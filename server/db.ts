@@ -1,6 +1,6 @@
 import { eq, desc, sql, and, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, qrCodes, InsertQRCode, scanHistory, InsertScanHistory, userPermissions, InsertUserPermission, UserPermission } from "../drizzle/schema";
+import { InsertUser, users, qrCodes, InsertQRCode, scanHistory, InsertScanHistory, userPermissions, InsertUserPermission, UserPermission, userFiles, InsertUserFile, backups, InsertBackup, adminActivityLogs, InsertAdminActivityLog } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -565,4 +565,180 @@ export async function getUserInvoices(userId: number) {
   const { eq } = await import("drizzle-orm");
   
   return await db.select().from(invoices).where(eq(invoices.userId, userId));
+}
+
+
+// File Management Functions
+export async function createUserFile(file: InsertUserFile) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(userFiles).values(file);
+  return result;
+}
+
+export async function getUserFiles(userId: number, limit: number = 100, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(userFiles)
+    .where(eq(userFiles.userId, userId))
+    .orderBy((t) => [desc(t.uploadedAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
+}
+
+export async function getUserFilesByQRCode(qrCodeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(userFiles)
+    .where(eq(userFiles.qrCodeId, qrCodeId))
+    .orderBy((t) => [desc(t.uploadedAt)]);
+  
+  return result;
+}
+
+export async function deleteUserFile(fileId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(userFiles)
+    .where(and(eq(userFiles.id, fileId), eq(userFiles.userId, userId)));
+}
+
+export async function getUserStorageUsage(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const result = await db
+    .select({ totalSize: sql`SUM(fileSize)` })
+    .from(userFiles)
+    .where(eq(userFiles.userId, userId));
+  
+  return result[0]?.totalSize || 0;
+}
+
+// Backup Management Functions
+export async function createBackup(backup: InsertBackup) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(backups).values(backup);
+  return result;
+}
+
+export async function getUserBackups(userId: number, limit: number = 50, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(backups)
+    .where(eq(backups.userId, userId))
+    .orderBy((t) => [desc(t.createdAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
+}
+
+export async function updateBackupStatus(backupId: number, status: string, updates?: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(backups)
+    .set({ status: status as any, ...updates })
+    .where(eq(backups.id, backupId));
+}
+
+export async function getBackupById(backupId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(backups)
+    .where(eq(backups.id, backupId))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getAllBackups(limit: number = 100, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(backups)
+    .orderBy((t) => [desc(t.createdAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
+}
+
+// Admin Activity Logging Functions
+export async function logAdminActivity(
+  adminId: number,
+  actionType: string,
+  targetUserId?: number,
+  details?: any,
+  ipAddress?: string,
+  userAgent?: string
+) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    await db.insert(adminActivityLogs).values({
+      adminId,
+      actionType,
+      targetUserId,
+      details: details ? JSON.stringify(details) : null,
+      ipAddress,
+      userAgent,
+      createdAt: new Date(),
+    });
+  } catch (error) {
+    console.error("[Database] Failed to log admin activity:", error);
+  }
+}
+
+export async function getAdminActivityLogs(limit: number = 100, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(adminActivityLogs)
+    .orderBy((t) => [desc(t.createdAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
+}
+
+export async function getAdminActivityLogsByUser(adminId: number, limit: number = 100, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(adminActivityLogs)
+    .where(eq(adminActivityLogs.adminId, adminId))
+    .orderBy((t) => [desc(t.createdAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
 }

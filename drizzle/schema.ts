@@ -152,3 +152,65 @@ export const invoices = mysqlTable("invoices", {
 
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = typeof invoices.$inferInsert;
+
+/**
+ * User Files table
+ * Tracks all files uploaded by users
+ */
+export const userFiles = mysqlTable("user_files", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  qrCodeId: int("qrCodeId").references(() => qrCodes.id, { onDelete: "cascade" }),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileType: varchar("fileType", { length: 50 }).notNull(),
+  mimeType: varchar("mimeType", { length: 100 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  s3Key: text("s3Key").notNull(),
+  s3Url: text("s3Url").notNull(),
+  uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserFile = typeof userFiles.$inferSelect;
+export type InsertUserFile = typeof userFiles.$inferInsert;
+
+/**
+ * Backups table
+ * Tracks all backup operations
+ */
+export const backups = mysqlTable("backups", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id, { onDelete: "cascade" }),
+  backupType: mysqlEnum("backupType", ["full", "incremental", "manual", "scheduled"]).notNull(),
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "failed"]).default("pending").notNull(),
+  s3Key: text("s3Key"),
+  s3Url: text("s3Url"),
+  backupSize: int("backupSize"),
+  itemsCount: int("itemsCount").default(0),
+  failureReason: text("failureReason"),
+  startedAt: timestamp("startedAt").defaultNow(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Backup = typeof backups.$inferSelect;
+export type InsertBackup = typeof backups.$inferInsert;
+
+/**
+ * Admin Activity Logs table
+ * Tracks all admin actions
+ */
+export const adminActivityLogs = mysqlTable("admin_activity_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  adminId: int("adminId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  actionType: varchar("actionType", { length: 100 }).notNull(),
+  targetUserId: int("targetUserId").references(() => users.id, { onDelete: "set null" }),
+  details: text("details"),
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AdminActivityLog = typeof adminActivityLogs.$inferSelect;
+export type InsertAdminActivityLog = typeof adminActivityLogs.$inferInsert;
