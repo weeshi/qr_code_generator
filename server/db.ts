@@ -956,3 +956,247 @@ export async function getUserRedemptions(userId: number, limit: number = 50, off
   
   return result;
 }
+
+
+// Points Rates Management Functions
+export async function getPointsRates() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { pointsRates } = await import("../drizzle/schema");
+  
+  const result = await db
+    .select()
+    .from(pointsRates)
+    .orderBy((t) => [t.actionType]);
+  
+  return result;
+}
+
+export async function getPointsRateByAction(actionType: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { pointsRates } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  
+  const result = await db
+    .select()
+    .from(pointsRates)
+    .where(eq(pointsRates.actionType, actionType as any))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updatePointsRate(actionType: string, pointsValue: number, description?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { pointsRates } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  
+  try {
+    const existing = await db
+      .select()
+      .from(pointsRates)
+      .where(eq(pointsRates.actionType, actionType as any))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(pointsRates)
+        .set({
+          pointsValue,
+          description,
+          updatedAt: new Date(),
+        })
+        .where(eq(pointsRates.actionType, actionType as any));
+    } else {
+      await db.insert(pointsRates).values({
+        actionType: actionType as any,
+        pointsValue,
+        description,
+        isActive: 1,
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to update points rate:", error);
+    throw error;
+  }
+}
+
+export async function togglePointsRateActive(actionType: string, isActive: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { pointsRates } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  
+  try {
+    await db
+      .update(pointsRates)
+      .set({
+        isActive: isActive ? 1 : 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(pointsRates.actionType, actionType as any));
+  } catch (error) {
+    console.error("[Database] Failed to toggle points rate:", error);
+    throw error;
+  }
+}
+
+// Points Adjustments Management Functions
+export async function adjustUserPoints(userId: number, adminId: number, pointsAdjusted: number, reason: string, notes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { pointsAdjustments, loyaltyPoints } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  
+  try {
+    // Record the adjustment
+    await db.insert(pointsAdjustments).values({
+      userId,
+      adminId,
+      pointsAdjusted,
+      reason,
+      notes,
+    });
+
+    // Update loyalty points
+    const current = await db
+      .select({ availablePoints: loyaltyPoints.availablePoints, totalPoints: loyaltyPoints.totalPoints })
+      .from(loyaltyPoints)
+      .where(eq(loyaltyPoints.userId, userId))
+      .limit(1);
+
+    if (current.length > 0) {
+      const newAvailable = (current[0].availablePoints || 0) + pointsAdjusted;
+      const newTotal = (current[0].totalPoints || 0) + pointsAdjusted;
+      
+      await db
+        .update(loyaltyPoints)
+        .set({
+          availablePoints: Math.max(0, newAvailable),
+          totalPoints: Math.max(0, newTotal),
+          lastUpdatedAt: new Date(),
+        })
+        .where(eq(loyaltyPoints.userId, userId));
+    }
+  } catch (error) {
+    console.error("[Database] Failed to adjust user points:", error);
+    throw error;
+  }
+}
+
+export async function getPointsAdjustmentHistory(limit: number = 100, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { pointsAdjustments } = await import("../drizzle/schema");
+  const { desc } = await import("drizzle-orm");
+  
+  const result = await db
+    .select()
+    .from(pointsAdjustments)
+    .orderBy((t) => [desc(t.createdAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
+}
+
+// Points Statistics Functions
+export async function getPointsStatistics() {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { pointsStatistics } = await import("../drizzle/schema");
+  
+  const result = await db
+    .select()
+    .from(pointsStatistics)
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updatePointsStatistics() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { pointsStatistics, loyaltyPoints, loyaltyTransactions } = await import("../drizzle/schema");
+  
+  try {
+    // For now, just set default values - in production, you'd aggregate from transactions
+    const stats = {
+      totalPointsDistributed: 0,
+      totalPointsRedeemed: 0,
+      activeUsersWithPoints: 0,
+      averagePointsPerUser: 0,
+      topTierCount: 0,
+      lastUpdatedAt: new Date(),
+    };
+
+    const existing = await db
+      .select()
+      .from(pointsStatistics)
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(pointsStatistics)
+        .set(stats)
+        .limit(1);
+    } else {
+      await db.insert(pointsStatistics).values(stats);
+    }
+  } catch (error) {
+    console.error("[Database] Failed to update points statistics:", error);
+  }
+}
+
+// Get loyalty data for admin dashboard
+export async function getTopUsersWithPoints(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { loyaltyPoints, users } = await import("../drizzle/schema");
+  const { desc } = await import("drizzle-orm");
+  
+  const result = await db
+    .select({
+      userId: loyaltyPoints.userId,
+      userName: users.name,
+      userEmail: users.email,
+      totalPoints: loyaltyPoints.totalPoints,
+      tier: loyaltyPoints.tier,
+    })
+    .from(loyaltyPoints)
+    .innerJoin(users, (t) => {
+      const { eq } = require("drizzle-orm");
+      return eq(loyaltyPoints.userId, users.id);
+    })
+    .orderBy((t) => [desc(loyaltyPoints.totalPoints)])
+    .limit(limit);
+  
+  return result;
+}
+
+export async function getLoyaltyRewardStats() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { loyaltyRewards } = await import("../drizzle/schema");
+  const { desc } = await import("drizzle-orm");
+  
+  const result = await db
+    .select()
+    .from(loyaltyRewards)
+    .orderBy((t) => [desc(loyaltyRewards.currentRedemptions)])
+    .limit(10);
+  
+  return result;
+}

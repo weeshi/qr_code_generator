@@ -293,3 +293,56 @@ export const userRedemptions = mysqlTable("user_redemptions", {
 
 export type UserRedemption = typeof userRedemptions.$inferSelect;
 export type InsertUserRedemption = typeof userRedemptions.$inferInsert;
+
+
+/**
+ * Points Rates Configuration table
+ * Defines how many points are awarded for each action
+ */
+export const pointsRates = mysqlTable("points_rates", {
+  id: int("id").autoincrement().primaryKey(),
+  actionType: mysqlEnum("actionType", ["qr_created", "qr_scanned", "file_uploaded", "referral", "signup_bonus", "daily_login", "profile_complete"]).notNull().unique(),
+  pointsValue: int("pointsValue").notNull().default(0),
+  description: text("description"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PointsRate = typeof pointsRates.$inferSelect;
+export type InsertPointsRate = typeof pointsRates.$inferInsert;
+
+/**
+ * Points Adjustment History table
+ * Tracks manual adjustments made by admins
+ */
+export const pointsAdjustments = mysqlTable("points_adjustments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  adminId: int("adminId").notNull().references(() => users.id, { onDelete: "restrict" }),
+  pointsAdjusted: int("pointsAdjusted").notNull(),
+  reason: text("reason").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PointsAdjustment = typeof pointsAdjustments.$inferSelect;
+export type InsertPointsAdjustment = typeof pointsAdjustments.$inferInsert;
+
+/**
+ * Points Statistics table
+ * Caches aggregated statistics for performance
+ */
+export const pointsStatistics = mysqlTable("points_statistics", {
+  id: int("id").autoincrement().primaryKey(),
+  totalPointsDistributed: int("totalPointsDistributed").default(0).notNull(),
+  totalPointsRedeemed: int("totalPointsRedeemed").default(0).notNull(),
+  activeUsersWithPoints: int("activeUsersWithPoints").default(0).notNull(),
+  averagePointsPerUser: int("averagePointsPerUser").default(0).notNull(),
+  topTierCount: int("topTierCount").default(0).notNull(),
+  lastUpdatedAt: timestamp("lastUpdatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PointsStatistic = typeof pointsStatistics.$inferSelect;
+export type InsertPointsStatistic = typeof pointsStatistics.$inferInsert;
