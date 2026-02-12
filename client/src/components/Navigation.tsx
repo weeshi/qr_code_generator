@@ -28,6 +28,7 @@ import {
   ChevronDown,
   Menu,
   X,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { APP_TITLE, APP_LOGO } from "@/const";
@@ -122,6 +123,16 @@ export default function Navigation() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Loyalty Points Badge */}
+            <Button
+              variant="outline"
+              className="gap-2 border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+              onClick={() => setLocation("/profile")}
+            >
+              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+              2,450
+            </Button>
+
             {/* Account Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -136,6 +147,13 @@ export default function Navigation() {
                   {user?.email}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setLocation("/profile")} 
+                  className="gap-2 cursor-pointer"
+                >
+                  <User className="w-4 h-4" />
+                  الملف الشخصي
+                </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setLocation("/my-qrcodes")} 
                   className="gap-2 cursor-pointer"
@@ -170,6 +188,17 @@ export default function Navigation() {
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 space-y-2">
             <Button
+              variant="outline"
+              className="w-full justify-start gap-2 border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+              onClick={() => {
+                setLocation("/profile");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+              2,450 نقطة
+            </Button>
+            <Button
               variant="ghost"
               className="w-full justify-start gap-2"
               onClick={() => {
@@ -190,6 +219,17 @@ export default function Navigation() {
             >
               <History className="w-4 h-4" />
               سجل المسحات
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2"
+              onClick={() => {
+                setLocation("/profile");
+                setMobileMenuOpen(false);
+              }}
+            >
+              <User className="w-4 h-4" />
+              الملف الشخصي
             </Button>
             <Button
               variant="ghost"

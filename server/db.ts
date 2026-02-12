@@ -742,3 +742,217 @@ export async function getAdminActivityLogsByUser(adminId: number, limit: number 
   
   return result;
 }
+
+
+// Loyalty Points Management Functions
+export async function initializeLoyaltyPoints(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { loyaltyPoints } = await import("../drizzle/schema");
+  
+  try {
+    await db.insert(loyaltyPoints).values({
+      userId,
+      totalPoints: 0,
+      availablePoints: 0,
+      usedPoints: 0,
+      tier: "bronze",
+      createdAt: new Date(),
+      lastUpdatedAt: new Date(),
+    });
+  } catch (error) {
+    console.error("[Database] Failed to initialize loyalty points:", error);
+  }
+}
+
+export async function getUserLoyaltyPoints(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { loyaltyPoints } = await import("../drizzle/schema");
+  
+  const result = await db
+    .select()
+    .from(loyaltyPoints)
+    .where(eq(loyaltyPoints.userId, userId))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function addLoyaltyPoints(
+  userId: number,
+  points: number,
+  transactionType: string,
+  description?: string,
+  relatedId?: number,
+  relatedType?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { loyaltyPoints, loyaltyTransactions } = await import("../drizzle/schema");
+  
+  try {
+    // Add transaction record
+    await db.insert(loyaltyTransactions).values({
+      userId,
+      transactionType: transactionType as any,
+      points,
+      description,
+      relatedId,
+      relatedType,
+      status: "completed",
+      createdAt: new Date(),
+    });
+
+    // Update loyalty points
+    const current = await db
+      .select({ availablePoints: loyaltyPoints.availablePoints, totalPoints: loyaltyPoints.totalPoints })
+      .from(loyaltyPoints)
+      .where(eq(loyaltyPoints.userId, userId))
+      .limit(1);
+
+    if (current.length > 0) {
+      const newAvailable = (current[0].availablePoints || 0) + points;
+      const newTotal = (current[0].totalPoints || 0) + points;
+      
+      await db
+        .update(loyaltyPoints)
+        .set({
+          availablePoints: newAvailable,
+          totalPoints: newTotal,
+          lastUpdatedAt: new Date(),
+        })
+        .where(eq(loyaltyPoints.userId, userId));
+    }
+  } catch (error) {
+    console.error("[Database] Failed to add loyalty points:", error);
+    throw error;
+  }
+}
+
+export async function redeemLoyaltyPoints(userId: number, points: number, reason?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { loyaltyPoints, loyaltyTransactions } = await import("../drizzle/schema");
+  
+  try {
+    const current = await db
+      .select({ availablePoints: loyaltyPoints.availablePoints })
+      .from(loyaltyPoints)
+      .where(eq(loyaltyPoints.userId, userId))
+      .limit(1);
+
+    if (!current.length || (current[0].availablePoints || 0) < points) {
+      throw new Error("Insufficient loyalty points");
+    }
+
+    // Add redemption transaction
+    await db.insert(loyaltyTransactions).values({
+      userId,
+      transactionType: "redeemed",
+      points: -points,
+      description: reason || "Points redeemed",
+      status: "completed",
+      createdAt: new Date(),
+    });
+
+    // Update loyalty points
+    const newAvailable = (current[0].availablePoints || 0) - points;
+    
+    await db
+      .update(loyaltyPoints)
+      .set({
+        availablePoints: newAvailable,
+        usedPoints: (await db
+          .select({ usedPoints: loyaltyPoints.usedPoints })
+          .from(loyaltyPoints)
+          .where(eq(loyaltyPoints.userId, userId))
+          .limit(1))[0]?.usedPoints || 0 + points,
+        lastUpdatedAt: new Date(),
+      })
+      .where(eq(loyaltyPoints.userId, userId));
+  } catch (error) {
+    console.error("[Database] Failed to redeem loyalty points:", error);
+    throw error;
+  }
+}
+
+export async function getUserLoyaltyTransactions(userId: number, limit: number = 50, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { loyaltyTransactions } = await import("../drizzle/schema");
+  
+  const result = await db
+    .select()
+    .from(loyaltyTransactions)
+    .where(eq(loyaltyTransactions.userId, userId))
+    .orderBy((t) => [desc(t.createdAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
+}
+
+export async function getLoyaltyRewards(isActive: boolean = true) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { loyaltyRewards } = await import("../drizzle/schema");
+  
+  const result = await db
+    .select()
+    .from(loyaltyRewards)
+    .where(isActive ? eq(loyaltyRewards.isActive, 1) : undefined)
+    .orderBy((t) => [t.pointsRequired]);
+  
+  return result;
+}
+
+export async function updateLoyaltyTier(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { loyaltyPoints } = await import("../drizzle/schema");
+  
+  const current = await db
+    .select({ totalPoints: loyaltyPoints.totalPoints })
+    .from(loyaltyPoints)
+    .where(eq(loyaltyPoints.userId, userId))
+    .limit(1);
+
+  if (!current.length) return;
+
+  const points = current[0].totalPoints || 0;
+  let newTier: "bronze" | "silver" | "gold" | "platinum" = "bronze";
+  
+  if (points >= 10000) newTier = "platinum";
+  else if (points >= 5000) newTier = "gold";
+  else if (points >= 1000) newTier = "silver";
+
+  await db
+    .update(loyaltyPoints)
+    .set({ tier: newTier })
+    .where(eq(loyaltyPoints.userId, userId));
+}
+
+export async function getUserRedemptions(userId: number, limit: number = 50, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { userRedemptions } = await import("../drizzle/schema");
+  
+  const result = await db
+    .select()
+    .from(userRedemptions)
+    .where(eq(userRedemptions.userId, userId))
+    .orderBy((t) => [desc(t.redeemedAt)])
+    .limit(limit)
+    .offset(offset);
+  
+  return result;
+}

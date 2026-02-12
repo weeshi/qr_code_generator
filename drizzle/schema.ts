@@ -214,3 +214,82 @@ export const adminActivityLogs = mysqlTable("admin_activity_logs", {
 
 export type AdminActivityLog = typeof adminActivityLogs.$inferSelect;
 export type InsertAdminActivityLog = typeof adminActivityLogs.$inferInsert;
+
+
+/**
+ * Loyalty Points table
+ * Tracks loyalty points balance for each user
+ */
+export const loyaltyPoints = mysqlTable("loyalty_points", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  totalPoints: int("totalPoints").default(0).notNull(),
+  availablePoints: int("availablePoints").default(0).notNull(),
+  usedPoints: int("usedPoints").default(0).notNull(),
+  tier: mysqlEnum("tier", ["bronze", "silver", "gold", "platinum"]).default("bronze").notNull(),
+  lastUpdatedAt: timestamp("lastUpdatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LoyaltyPoint = typeof loyaltyPoints.$inferSelect;
+export type InsertLoyaltyPoint = typeof loyaltyPoints.$inferInsert;
+
+/**
+ * Loyalty Transactions table
+ * Tracks all point transactions
+ */
+export const loyaltyTransactions = mysqlTable("loyalty_transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  transactionType: mysqlEnum("transactionType", ["qr_created", "qr_scanned", "file_uploaded", "referral", "bonus", "redeemed", "expired"]).notNull(),
+  points: int("points").notNull(),
+  description: text("description"),
+  relatedId: int("relatedId"),
+  relatedType: varchar("relatedType", { length: 50 }),
+  status: mysqlEnum("status", ["pending", "completed", "cancelled"]).default("completed").notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LoyaltyTransaction = typeof loyaltyTransactions.$inferSelect;
+export type InsertLoyaltyTransaction = typeof loyaltyTransactions.$inferInsert;
+
+/**
+ * Loyalty Rewards table
+ * Defines available rewards that users can redeem
+ */
+export const loyaltyRewards = mysqlTable("loyalty_rewards", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  pointsRequired: int("pointsRequired").notNull(),
+  rewardType: mysqlEnum("rewardType", ["discount", "feature_unlock", "premium_access", "badge", "custom"]).notNull(),
+  rewardValue: varchar("rewardValue", { length: 255 }),
+  icon: text("icon"),
+  isActive: int("isActive").default(1).notNull(),
+  maxRedemptions: int("maxRedemptions"),
+  currentRedemptions: int("currentRedemptions").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LoyaltyReward = typeof loyaltyRewards.$inferSelect;
+export type InsertLoyaltyReward = typeof loyaltyRewards.$inferInsert;
+
+/**
+ * User Redemptions table
+ * Tracks rewards redeemed by users
+ */
+export const userRedemptions = mysqlTable("user_redemptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rewardId: int("rewardId").notNull().references(() => loyaltyRewards.id),
+  pointsSpent: int("pointsSpent").notNull(),
+  status: mysqlEnum("status", ["pending", "completed", "cancelled"]).default("pending").notNull(),
+  redeemedAt: timestamp("redeemedAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserRedemption = typeof userRedemptions.$inferSelect;
+export type InsertUserRedemption = typeof userRedemptions.$inferInsert;
