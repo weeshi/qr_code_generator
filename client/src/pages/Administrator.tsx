@@ -358,29 +358,178 @@ export default function Administrator() {
         {/* Users Management */}
         {activeTab === "users" && (
           <div className="space-y-6">
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">إجمالي المستخدمين</p>
+                      <p className="text-3xl font-bold text-blue-600">1,234</p>
+                    </div>
+                    <Users className="w-10 h-10 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">المستخدمون النشطون</p>
+                      <p className="text-3xl font-bold text-green-600">856</p>
+                    </div>
+                    <TrendingUp className="w-10 h-10 text-green-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">المستخدمون المحظورون</p>
+                      <p className="text-3xl font-bold text-red-600">23</p>
+                    </div>
+                    <AlertCircle className="w-10 h-10 text-red-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">المسؤولون</p>
+                      <p className="text-3xl font-bold text-purple-600">12</p>
+                    </div>
+                    <Shield className="w-10 h-10 text-purple-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Filter */}
+            <Card>
+              <CardHeader>
+                <CardTitle>البحث والتصفية</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">البحث</label>
+                    <input
+                      type="text"
+                      placeholder="ابحث بالاسم أو البريد الإلكتروني..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">الحالة</label>
+                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                      <option>الكل</option>
+                      <option>نشط</option>
+                      <option>غير نشط</option>
+                      <option>محظور</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">الدور</label>
+                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                      <option>الكل</option>
+                      <option>مستخدم</option>
+                      <option>مسؤول</option>
+                    </select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Users Table */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
-                  إدارة المستخدمين
+                  قائمة المستخدمين
                 </CardTitle>
-                <CardDescription>عرض وإدارة جميع المستخدمين في النظام</CardDescription>
+                <CardDescription>إدارة حسابات المستخدمين والصلاحيات</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="text-3xl font-bold text-blue-600 mb-1">1,234</div>
-                      <div className="text-sm text-gray-600">إجمالي المستخدمين</div>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                      <div className="text-3xl font-bold text-green-600 mb-1">856</div>
-                      <div className="text-sm text-gray-600">مستخدمون نشطون</div>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                      <div className="text-3xl font-bold text-purple-600 mb-1">12</div>
-                      <div className="text-sm text-gray-600">مسؤولون</div>
-                    </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 font-semibold text-gray-900">المستخدم</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-900">البريد الإلكتروني</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-900">الدور</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-900">الحالة</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-900">آخر نشاط</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-900">الإجراءات</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { id: 1, name: "أحمد محمد", email: "ahmed@example.com", role: "user", status: "نشط", lastActivity: "منذ 5 دقائق" },
+                        { id: 2, name: "فاطمة علي", email: "fatima@example.com", role: "admin", status: "نشط", lastActivity: "منذ ساعة" },
+                        { id: 3, name: "محمود حسن", email: "mahmoud@example.com", role: "user", status: "نشط", lastActivity: "منذ يومين" },
+                        { id: 4, name: "سارة إبراهيم", email: "sarah@example.com", role: "user", status: "غير نشط", lastActivity: "منذ أسبوع" },
+                        { id: 5, name: "علي أحمد", email: "ali@example.com", role: "user", status: "محظور", lastActivity: "منذ شهر" },
+                      ].map((user) => (
+                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4 font-medium text-gray-900">{user.name}</td>
+                          <td className="py-3 px-4 text-gray-600">{user.email}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              user.role === "admin" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                            }`}>
+                              {user.role === "admin" ? "مسؤول" : "مستخدم"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              user.status === "نشط" ? "bg-green-100 text-green-700" :
+                              user.status === "غير نشط" ? "bg-gray-100 text-gray-700" :
+                              "bg-red-100 text-red-700"
+                            }`}>
+                              {user.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-600 text-xs">{user.lastActivity}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="text-xs">عرض</Button>
+                              <Button size="sm" variant="outline" className="text-xs">تعديل</Button>
+                              <Button size="sm" variant="outline" className="text-xs text-red-600">حذف</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* User Details Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>إحصائيات مفصلة</CardTitle>
+                <CardDescription>عرض إحصائيات استخدام المستخدمين</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">عدد رموز QR المُنشأة</div>
+                    <div className="text-2xl font-bold text-gray-900">245</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">عدد عمليات المسح</div>
+                    <div className="text-2xl font-bold text-gray-900">1,234</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">الملفات المرفوعة</div>
+                    <div className="text-2xl font-bold text-gray-900">45</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">نقاط الولاء</div>
+                    <div className="text-2xl font-bold text-yellow-600">8,450</div>
                   </div>
                 </div>
               </CardContent>
