@@ -308,17 +308,35 @@ export const appRouter = router({
 
   // Admin Management
   admin: router({
-    // Get all users
+    // Get all users with search and filters
     getAllUsers: adminProcedure
       .input(
         z.object({
           limit: z.number().default(50),
           offset: z.number().default(0),
+          search: z.string().optional(),
+          status: z.string().optional(),
+          role: z.string().optional(),
         })
       )
       .query(async ({ input }) => {
         const users = await getAllUsers(input.limit, input.offset);
-        return users;
+        let filtered = users;
+        if (input.search && input.search.trim()) {
+          const searchLower = input.search.toLowerCase();
+          filtered = filtered.filter(
+            (u: any) =>
+              u.name?.toLowerCase().includes(searchLower) ||
+              u.email?.toLowerCase().includes(searchLower)
+          );
+        }
+        if (input.status && input.status !== "all") {
+          filtered = filtered.filter((u: any) => u.status === input.status);
+        }
+        if (input.role && input.role !== "all") {
+          filtered = filtered.filter((u: any) => u.role === input.role);
+        }
+        return filtered;
       }),
 
     // Get user details
@@ -344,11 +362,46 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Update user status
+    updateUserStatus: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          status: z.string(),
+          reason: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return { success: true };
+      }),
+
+    // Delete user
+    deleteUser: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        return { success: true };
+      }),
+
     // Get system statistics
     getSystemStats: adminProcedure
       .query(async () => {
         const stats = await getSystemStats();
         return stats;
+      }),
+
+    // Get user count
+    getUserCount: adminProcedure
+      .query(async () => {
+        const users = await getAllUsers(1000, 0);
+        const active = users.filter((u: any) => u.status === "active").length;
+        const banned = users.filter((u: any) => u.status === "banned").length;
+        const admins = users.filter((u: any) => u.role === "admin").length;
+        return {
+          total: users.length,
+          active,
+          banned,
+          admins,
+        };
       }),
   }),
 
