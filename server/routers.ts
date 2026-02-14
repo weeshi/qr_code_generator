@@ -382,6 +382,22 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Update user advanced
+    updateUserAdvanced: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          email: z.string().email().optional(),
+          name: z.string().optional(),
+          notes: z.string().optional(),
+          status: z.enum(["active", "inactive", "banned"]).optional(),
+          role: z.enum(["user", "admin"]).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return { success: true };
+      }),
+
     // Get system statistics
     getSystemStats: adminProcedure
       .query(async () => {
@@ -634,6 +650,64 @@ export const appRouter = router({
       }
     }),
   }),
-});
+
+  loyaltyPoints: router({
+    getPointsRates: adminProcedure.query(async () => {
+      const { getPointsRates } = await import("./db");
+      return await getPointsRates();
+    }),
+
+    updatePointsRate: adminProcedure
+      .input(
+        z.object({
+          actionType: z.string(),
+          pointsValue: z.number(),
+          description: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { updatePointsRate } = await import("./db");
+        await updatePointsRate(input.actionType, input.pointsValue, input.description);
+        return { success: true };
+      }),
+
+    adjustUserPoints: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          pointsAdjusted: z.number(),
+          reason: z.string(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { adjustUserPoints } = await import("./db");
+        await adjustUserPoints(input.userId, ctx.user.id, input.pointsAdjusted, input.reason, input.notes);
+        return { success: true };
+      }),
+
+    getPointsStatistics: adminProcedure.query(async () => {
+      const { getPointsStatistics } = await import("./db");
+      return await getPointsStatistics();
+    }),
+
+    getTopUsersWithPoints: adminProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ input }) => {
+        const { getTopUsersWithPoints } = await import("./db");
+        return await getTopUsersWithPoints(input.limit);
+      }),
+
+    getLoyaltyRewards: adminProcedure.query(async () => {
+      const { getLoyaltyRewards } = await import("./db");
+      return await getLoyaltyRewards();
+    }),
+
+    getLoyaltyRewardStats: adminProcedure.query(async () => {
+      const { getLoyaltyRewardStats } = await import("./db");
+      return await getLoyaltyRewardStats();
+    }),
+  }),
+})
 
 export type AppRouter = typeof appRouter;
