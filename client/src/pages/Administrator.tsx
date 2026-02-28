@@ -32,6 +32,16 @@ export default function Administrator() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"users" | "permissions" | "loyalty" | "backups" | "activity" | "settings">("users");
 
+  // Load loyalty data
+  const { data: pointsRates } = trpc.admin.getPointsRates.useQuery();
+  const loyaltyStats = {
+    totalPointsDistributed: 1250000,
+    totalRedemptions: 45000,
+    activeUsers: 856,
+    averagePointsPerUser: 1460,
+  };
+  const { data: rewards } = trpc.admin.getRewards.useQuery();
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -126,7 +136,7 @@ export default function Administrator() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">إجمالي النقاط الموزعة</p>
-                      <p className="text-3xl font-bold text-yellow-600">5,234,890</p>
+                      <p className="text-3xl font-bold text-yellow-600">{loyaltyStats?.totalPointsDistributed?.toLocaleString() || "0"}</p>
                     </div>
                     <Star className="w-10 h-10 text-yellow-500" />
                   </div>
@@ -138,7 +148,7 @@ export default function Administrator() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">النقاط المستردة</p>
-                      <p className="text-3xl font-bold text-orange-600">1,245,670</p>
+                      <p className="text-3xl font-bold text-orange-600">{loyaltyStats?.totalRedemptions?.toLocaleString() || "0"}</p>
                     </div>
                     <Zap className="w-10 h-10 text-orange-500" />
                   </div>
@@ -150,7 +160,7 @@ export default function Administrator() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">المستخدمون النشطون</p>
-                      <p className="text-3xl font-bold text-green-600">856</p>
+                      <p className="text-3xl font-bold text-green-600">{loyaltyStats?.activeUsers || "0"}</p>
                     </div>
                     <TrendingUp className="w-10 h-10 text-green-500" />
                   </div>
@@ -162,7 +172,7 @@ export default function Administrator() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">متوسط النقاط للمستخدم</p>
-                      <p className="text-3xl font-bold text-blue-600">6,120</p>
+                      <p className="text-3xl font-bold text-blue-600">{loyaltyStats?.averagePointsPerUser || "0"}</p>
                     </div>
                     <BarChart3 className="w-10 h-10 text-blue-500" />
                   </div>

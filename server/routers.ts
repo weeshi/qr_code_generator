@@ -419,6 +419,17 @@ export const appRouter = router({
           admins,
         };
       }),
+
+    getPointsRates: adminProcedure
+      .query(async () => ({
+        createQR: 10,
+        scanQR: 5,
+        referral: 50,
+      })),
+
+    getRewards: adminProcedure
+      .query(async () => []),
+
   }),
 
   // HTML Templates
