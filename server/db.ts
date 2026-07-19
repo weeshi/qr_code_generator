@@ -1200,3 +1200,49 @@ export async function getLoyaltyRewardStats() {
   
   return result;
 }
+
+
+export async function updateUserAdvanced(data: {
+  userId: number;
+  name?: string;
+  role?: 'user' | 'admin';
+  status?: 'active' | 'inactive' | 'banned';
+  loyaltyPoints?: number;
+  loyaltyTier?: string;
+}) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const updateSet: Record<string, any> = {};
+  
+  if (data.name !== undefined) updateSet.name = data.name;
+  if (data.role !== undefined) updateSet.role = data.role;
+  if (data.status !== undefined) updateSet.status = data.status;
+
+  if (Object.keys(updateSet).length > 0) {
+    await db
+      .update(users)
+      .set(updateSet)
+      .where(eq(users.id, data.userId));
+  }
+
+  // Update loyalty points if provided
+  if (data.loyaltyPoints !== undefined || data.loyaltyTier !== undefined) {
+    const { loyaltyPoints } = await import("../drizzle/schema");
+    const loyaltyUpdateSet: Record<string, any> = {};
+    
+    if (data.loyaltyPoints !== undefined) loyaltyUpdateSet.currentPoints = data.loyaltyPoints;
+    if (data.loyaltyTier !== undefined) loyaltyUpdateSet.tier = data.loyaltyTier;
+
+    if (Object.keys(loyaltyUpdateSet).length > 0) {
+      await db
+        .update(loyaltyPoints)
+        .set(loyaltyUpdateSet)
+        .where(eq(loyaltyPoints.userId, data.userId));
+    }
+  }
+
+  return { success: true };
+}

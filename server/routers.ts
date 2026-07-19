@@ -718,6 +718,45 @@ export const appRouter = router({
       const { getLoyaltyRewardStats } = await import("./db");
       return await getLoyaltyRewardStats();
     }),
+
+    updateUserAdvanced: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          name: z.string().optional(),
+          role: z.enum(["user", "admin"]).optional(),
+          status: z.enum(["active", "inactive", "banned"]).optional(),
+          loyaltyPoints: z.number().optional(),
+          loyaltyTier: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const { updateUserAdvanced } = await import("./db");
+          const result = await updateUserAdvanced(input);
+          return { success: true, data: result };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update user",
+          });
+        }
+      }),
+
+    getUserDetailsForEdit: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        try {
+          const { getUserById } = await import("./db");
+          const user = await getUserById(input.userId);
+          return user;
+        } catch (error) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+      }),
   }),
 })
 

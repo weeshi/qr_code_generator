@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { AdvancedUserEditModal } from "@/components/AdvancedUserEditModal";
 import {
   Users,
   Shield,
@@ -430,6 +431,7 @@ function UsersManagementTab() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAdvancedModal, setShowAdvancedModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
 
   // Fetch users with filters
@@ -456,9 +458,37 @@ function UsersManagementTab() {
   // Delete user mutation
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
 
+  // Advanced user edit mutation
+  const updateAdvancedMutation = trpc.admin.updateUserAdvanced.useMutation();
+
+  // Invalidate queries after mutations
+  const utils = trpc.useUtils();
+
   const handleEditUser = (user: any) => {
     setEditingUser(user);
     setShowEditModal(true);
+  };
+
+  const handleAdvancedEdit = (user: any) => {
+    setEditingUser(user);
+    setShowAdvancedModal(true);
+  };
+
+  const handleSaveAdvancedEdit = async (userData: any) => {
+    try {
+      await updateAdvancedMutation.mutateAsync({
+        userId: userData.id,
+        name: userData.name,
+        role: userData.role,
+        status: userData.status,
+      });
+      await utils.admin.getAllUsers.invalidate();
+      setShowAdvancedModal(false);
+      setEditingUser(null);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
   };
 
   const handleDeleteUser = (user: any) => {
@@ -647,6 +677,14 @@ function UsersManagementTab() {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="text-xs bg-blue-50 hover:bg-blue-100"
+                            onClick={() => handleAdvancedEdit(user)}
+                          >
+                            تعديل متقدم
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="text-xs"
                             onClick={() => handleEditUser(user)}
                           >
@@ -718,6 +756,16 @@ function UsersManagementTab() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Advanced User Edit Modal */}
+      {showAdvancedModal && editingUser && (
+        <AdvancedUserEditModal
+          user={editingUser}
+          isOpen={showAdvancedModal}
+          onClose={() => setShowAdvancedModal(false)}
+          onSave={handleSaveAdvancedEdit}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
