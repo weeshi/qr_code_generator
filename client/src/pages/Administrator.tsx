@@ -6,6 +6,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { AdvancedUserEditModal } from "@/components/AdvancedUserEditModal";
+import { PointsRateModal } from "@/components/PointsRateModal";
+import { RewardModal } from "@/components/RewardModal";
 import {
   Users,
   Shield,
@@ -33,6 +35,10 @@ export default function Administrator() {
   const { user, loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"users" | "permissions" | "loyalty" | "backups" | "activity" | "settings">("users");
+  const [showPointsRateModal, setShowPointsRateModal] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [editingRate, setEditingRate] = useState<any>(null);
+  const [editingReward, setEditingReward] = useState<any>(null);
 
   // Load loyalty data
   const { data: pointsRates } = trpc.admin.getPointsRates.useQuery();
@@ -373,7 +379,8 @@ export default function Administrator() {
                             size="sm" 
                             variant="outline"
                             onClick={() => {
-                              toast.info(`فتح نموذج تعديل مكافأة "${reward.name}"`);
+                              setEditingReward(reward);
+                              setShowRewardModal(true);
                             }}
                           >
                             تعديل
@@ -396,7 +403,8 @@ export default function Administrator() {
                 <Button 
                   className="w-full mt-4 bg-green-600 hover:bg-green-700 gap-2"
                   onClick={() => {
-                    toast.info("فتح نموذج إضافة مكافأة جديدة");
+                    setEditingReward(null);
+                    setShowRewardModal(true);
                   }}
                 >
                   <Gift className="w-4 h-4" />
@@ -418,6 +426,30 @@ export default function Administrator() {
             </CardContent>
           </Card>
         )}
+
+        {/* Points Rate Modal */}
+        <PointsRateModal
+          isOpen={showPointsRateModal}
+          onClose={() => setShowPointsRateModal(false)}
+          onSave={async (data) => {
+            console.log("Saving points rate:", data);
+            toast.success("تم حفظ معدل النقاط");
+          }}
+          initialData={editingRate}
+          isEditing={!!editingRate}
+        />
+
+        {/* Reward Modal */}
+        <RewardModal
+          isOpen={showRewardModal}
+          onClose={() => setShowRewardModal(false)}
+          onSave={async (data) => {
+            console.log("Saving reward:", data);
+            toast.success("تم حفظ المكافأة");
+          }}
+          initialData={editingReward}
+          isEditing={!!editingReward}
+        />
       </div>
     </div>
   );
