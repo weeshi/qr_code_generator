@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import {
   Users,
   Shield,
@@ -215,13 +216,23 @@ export default function Administrator() {
                             defaultValue={rate.points}
                             className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
                           />
-                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                          <Button 
+                            size="sm" 
+                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={() => {
+                              toast.success(`تم تحديث معدل "${rate.action}" بنجاح`);
+                            }}
+                          >
                             تحديث
                           </Button>
                           <Button
                             size="sm"
                             variant={rate.active ? "default" : "outline"}
                             className={rate.active ? "bg-green-600 hover:bg-green-700" : ""}
+                            onClick={() => {
+                              const status = rate.active ? "تعطيل" : "تفعيل";
+                              toast.info(`تم ${status} معدل "${rate.action}"`);
+                            }}
                           >
                             {rate.active ? "مفعل" : "معطل"}
                           </Button>
@@ -317,7 +328,14 @@ export default function Administrator() {
                       rows={3}
                     ></textarea>
                   </div>
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">تطبيق التعديل</Button>
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={() => {
+                      toast.success("تم تعديل نقاط المستخدم بنجاح");
+                    }}
+                  >
+                    تطبيق التعديل
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -350,14 +368,36 @@ export default function Administrator() {
                           <div className="text-xs text-gray-500">{reward.redemptions} استرجاع</div>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">تعديل</Button>
-                          <Button size="sm" variant="outline" className="text-red-600">حذف</Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              toast.info(`فتح نموذج تعديل مكافأة "${reward.name}"`);
+                            }}
+                          >
+                            تعديل
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-600"
+                            onClick={() => {
+                              toast.error(`تم حذف مكافأة "${reward.name}"`);
+                            }}
+                          >
+                            حذف
+                          </Button>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <Button className="w-full mt-4 bg-green-600 hover:bg-green-700 gap-2">
+                <Button 
+                  className="w-full mt-4 bg-green-600 hover:bg-green-700 gap-2"
+                  onClick={() => {
+                    toast.info("فتح نموذج إضافة مكافأة جديدة");
+                  }}
+                >
                   <Gift className="w-4 h-4" />
                   إضافة مكافأة جديدة
                 </Button>
