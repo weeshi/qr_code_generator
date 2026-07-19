@@ -25,6 +25,7 @@ function Router() {
       </Route>
       <Route path={"/scanner"} component={Scanner} />
       <Route path={"/history"} component={ScanHistory} />
+      <Route path={"/my-qrcodes"} component={MyQRCodes} />
       <Route path={"/my-qr-codes"} component={MyQRCodes} />
       <Route path={"/profile"} component={Profile} />
       <Route path={"/admin-panel-secure-access-2024"} component={AdminDashboard} />
