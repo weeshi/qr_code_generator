@@ -31,6 +31,9 @@ import {
   getUserSubscription,
   createUserSubscription,
   getUserInvoices,
+  addPointsToUser,
+  getPointsRate,
+  getUserPoints,
 } from "./db";
 import { generateQRCodeByType } from "./qrGenerator";
 import {
@@ -86,11 +89,37 @@ export const appRouter = router({
             qrSvg: svg,
           });
 
+          // Award points for creating QR code
+          let pointsAwarded = 0;
+          let userPoints = { totalPoints: 0, availablePoints: 0, tier: 'bronze' };
+          
+          try {
+            const pointsRate = await getPointsRate('qr_created');
+            if (pointsRate > 0) {
+              const pointsResult = await addPointsToUser(
+                ctx.user.id,
+                pointsRate,
+                `Created ${input.type} QR code: ${input.name}`
+              );
+              pointsAwarded = pointsRate;
+              userPoints = {
+                totalPoints: pointsResult.newTotalPoints,
+                availablePoints: pointsResult.newAvailablePoints,
+                tier: 'bronze',
+              };
+            }
+          } catch (pointsError) {
+            console.error('Error awarding points:', pointsError);
+            // Continue even if points award fails
+          }
+
           return {
             success: true,
             message: "QR code generated successfully",
             dataUrl,
             svg,
+            pointsAwarded,
+            userPoints,
           };
         } catch (error) {
           throw new Error(

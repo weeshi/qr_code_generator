@@ -1246,3 +1246,102 @@ export async function updateUserAdvanced(data: {
 
   return { success: true };
 }
+
+
+export async function addPointsToUser(userId: number, pointsToAdd: number, reason: string) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const { loyaltyPoints, loyaltyTransactions } = await import("../drizzle/schema");
+    
+    // Get current points
+    const currentRecord = await db
+      .select()
+      .from(loyaltyPoints)
+      .where(eq(loyaltyPoints.userId, userId))
+      .limit(1);
+
+    const newTotalPoints = (currentRecord[0]?.totalPoints || 0) + pointsToAdd;
+    const newAvailablePoints = (currentRecord[0]?.availablePoints || 0) + pointsToAdd;
+
+    // Update or insert points
+    if (currentRecord.length > 0) {
+      await db
+        .update(loyaltyPoints)
+        .set({ 
+          totalPoints: newTotalPoints,
+          availablePoints: newAvailablePoints,
+        })
+        .where(eq(loyaltyPoints.userId, userId));
+    } else {
+      await db.insert(loyaltyPoints).values({
+        userId,
+        totalPoints: pointsToAdd,
+        availablePoints: pointsToAdd,
+        tier: 'bronze',
+      });
+    }
+
+    // Log the transaction
+    await db.insert(loyaltyTransactions).values({
+      userId,
+      transactionType: 'qr_created',
+      points: pointsToAdd,
+      description: reason,
+      status: 'completed',
+    });
+
+    return { success: true, newTotalPoints, newAvailablePoints };
+  } catch (error) {
+    console.error("Error adding points:", error);
+    throw error;
+  }
+}
+
+export async function getPointsRate(actionType: string) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const { pointsRates } = await import("../drizzle/schema");
+    const { eq: drizzleEq } = await import("drizzle-orm");
+    
+    const rate = await db
+      .select()
+      .from(pointsRates)
+      .where(drizzleEq(pointsRates.actionType, actionType as any))
+      .limit(1);
+
+    return rate[0]?.pointsValue || 0;
+  } catch (error) {
+    console.error("Error getting points rate:", error);
+    return 0;
+  }
+}
+
+export async function getUserPoints(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const { loyaltyPoints } = await import("../drizzle/schema");
+    
+    const points = await db
+      .select()
+      .from(loyaltyPoints)
+      .where(eq(loyaltyPoints.userId, userId))
+      .limit(1);
+
+    return points[0] || { totalPoints: 0, availablePoints: 0, tier: 'bronze' };
+  } catch (error) {
+    console.error("Error getting user points:", error);
+    return { totalPoints: 0, availablePoints: 0, tier: 'bronze' };
+  }
+}

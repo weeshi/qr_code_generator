@@ -28,7 +28,10 @@ export default function Generator({ type }: GeneratorProps) {
   const generateMutation = trpc.qrCode.generate.useMutation({
     onSuccess: (data) => {
       setGeneratedQR({ dataUrl: data.dataUrl, svg: data.svg });
-      toast.success("تم إنشاء رمز QR بنجاح");
+      const pointsMessage = data.pointsAwarded > 0 
+        ? ` +${data.pointsAwarded} نقطة` 
+        : '';
+      toast.success(`تم إنشاء رمز QR بنجاح${pointsMessage}`);
     },
     onError: (error) => {
       toast.error(`خطأ: ${error.message}`);
