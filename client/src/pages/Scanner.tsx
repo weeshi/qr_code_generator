@@ -26,8 +26,11 @@ export default function Scanner() {
 
   // Add to history mutation
   const addToHistoryMutation = trpc.qrCode.addToHistory.useMutation({
-    onSuccess: () => {
-      toast.success("تم إضافة رمز QR إلى السجل");
+    onSuccess: (data) => {
+      const pointsMessage = data.pointsAwarded > 0 
+        ? ` +${data.pointsAwarded} نقطة` 
+        : '';
+      toast.success(`تم مسح رمز QR بنجاح${pointsMessage}`);
     },
   });
 

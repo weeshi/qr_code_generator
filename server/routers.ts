@@ -258,7 +258,31 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         await addScanHistory(ctx.user.id, input.scannedData, input.dataType);
-        return { success: true };
+        
+        // Award points for scanning QR code
+        let pointsAwarded = 0;
+        let userPoints = { totalPoints: 0, availablePoints: 0, tier: 'bronze' };
+        
+        try {
+          const pointsRate = await getPointsRate('qr_scanned');
+          if (pointsRate > 0) {
+            const pointsResult = await addPointsToUser(
+              ctx.user.id,
+              pointsRate,
+              `Scanned QR code: ${input.scannedData.substring(0, 50)}`
+            );
+            pointsAwarded = pointsRate;
+            userPoints = {
+              totalPoints: pointsResult.newTotalPoints,
+              availablePoints: pointsResult.newAvailablePoints,
+              tier: 'bronze',
+            };
+          }
+        } catch (pointsError) {
+          console.error('Error awarding points for scan:', pointsError);
+        }
+        
+        return { success: true, pointsAwarded, userPoints };
       }),
 
     // Get scan history
