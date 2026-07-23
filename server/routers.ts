@@ -53,7 +53,28 @@ import {
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(async (opts) => {
+      const user = opts.ctx.user;
+      if (!user) return user;
+      
+      try {
+        const loyaltyPoints = await getUserPoints(user.id);
+        return {
+          ...user,
+          loyaltyPoints,
+        };
+      } catch (error) {
+        console.error('Error fetching loyalty points:', error);
+        return {
+          ...user,
+          loyaltyPoints: {
+            totalPoints: 0,
+            availablePoints: 0,
+            tier: 'bronze',
+          },
+        };
+      }
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

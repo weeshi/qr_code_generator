@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import PointsCard from "@/components/PointsCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
@@ -259,6 +260,17 @@ export default function Home() {
 
       <div className="p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
+          {/* Points Card Section */}
+          <div className="mb-16">
+            <div className="max-w-2xl">
+              <PointsCard
+                totalPoints={user?.loyaltyPoints?.totalPoints || 0}
+                availablePoints={user?.loyaltyPoints?.availablePoints || 0}
+                tier={user?.loyaltyPoints?.tier || 'bronze'}
+              />
+            </div>
+          </div>
+
           {/* Statistics Section */}
           <div className="mb-16">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
